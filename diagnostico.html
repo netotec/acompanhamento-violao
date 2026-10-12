@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Diagnóstico – Violão</title>
+<style>
+  body { margin:0; padding:20px 16px 40px; background:#fbf7ef; color:#2a1d15; font:16px/1.5 system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif; }
+  main { max-width:520px; margin:0 auto; }
+  h1 { font:400 26px Georgia, serif; margin:0 0 4px; }
+  p { color:#7d6a5a; margin:4px 0 16px; }
+  .item { background:#fff; border:1px solid #e7dccb; border-radius:12px; padding:10px 14px; margin-bottom:10px; }
+  .item b { display:block; }
+  .ok { color:#3d7a4f; } .falha { color:#a13a26; } .esp { color:#7d6a5a; }
+  button { font:inherit; font-weight:700; padding:12px 16px; border-radius:12px; border:0; background:#c8741f; color:#fff; width:100%; margin-top:6px; }
+  pre { white-space:pre-wrap; word-break:break-word; background:#fff; border:1px dashed #c8741f; border-radius:12px; padding:10px; font-size:13px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Diagnóstico do app</h1>
+  <p>Abra esta página no aparelho em que o link não abre e me envie o resultado (toque em "Copiar resultado" ou tire uma foto).</p>
+  <div id="lista"></div>
+  <button id="copiar" type="button">Copiar resultado</button>
+  <pre id="texto"></pre>
+</main>
+
+<script>
+  var EXEC = 'https://script.google.com/macros/s/AKfycbzGdGxdk7-yfvmZuffnSb3xKzsb_wGu79eqeYzqEUHE2FHczwO09kY5x3J3s2kMkOkg/exec';
+  var linhas = [];
+  var lista = document.getElementById('lista');
+
+  function mostrar() {
+    lista.innerHTML = '';
+    linhas.forEach(function (l) {
+      var d = document.createElement('div'); d.className = 'item';
+      var t = document.createElement('b'); t.textContent = l.nome;
+      var r = document.createElement('span'); r.className = l.estado; r.textContent = l.texto;
+      d.append(t, r); lista.append(d);
+    });
+    document.getElementById('texto').textContent = linhas.map(function (l) {
+      return (l.estado === 'ok' ? '[OK] ' : l.estado === 'falha' ? '[FALHA] ' : '[...] ') + l.nome + ': ' + l.texto;
+    }).join('\n');
+  }
+  function item(nome) { var l = { nome: nome, estado: 'esp', texto: 'testando…' }; linhas.push(l); mostrar(); return l; }
+  function fim(l, ok, texto) { l.estado = ok ? 'ok' : 'falha'; l.texto = texto; mostrar(); }
+
+  // 1. navegador
+  var a = item('Navegador'); fim(a, true, navigator.userAgent.slice(0, 140));
+
+  // 2. recursos que a página usa
+  var b = item('Recursos do navegador');
+  var falta = [];
+  if (!window.fetch) falta.push('fetch');
+  if (!window.Proxy) falta.push('Proxy');
+  if (!window.URLSearchParams) falta.push('URLSearchParams');
+  if (!window.Promise) falta.push('Promise');
+  fim(b, !falta.length, falta.length ? 'faltando: ' + falta.join(', ') : 'tudo disponível');
+
+  // 3. armazenamento (guarda o código do aparelho)
+  var c = item('Armazenamento do aparelho');
+  try {
+    localStorage.setItem('violao_teste', '1');
+    var ok = localStorage.getItem('violao_teste') === '1';
+    localStorage.removeItem('violao_teste');
+    fim(c, ok, ok ? 'funciona' : 'não guardou');
+  } catch (e) { fim(c, false, 'bloqueado (' + e.name + '). Saia do modo privado e tente de novo.'); }
+
+  // 4. conexão com o servidor
+  var d = item('Conexão com o servidor do app');
+  var token = new URLSearchParams(location.search).get('t') || '0000000000000000';
+  var t0 = Date.now();
+  fetch(EXEC + '?modo=json&t=' + encodeURIComponent(token), { credentials: 'omit', redirect: 'follow' })
+    .then(function (r) { return r.json().then(function (j) { return { status: r.status, j: j }; }); })
+    .then(function (x) {
+      var ms = Date.now() - t0;
+      if (token === '0000000000000000') {
+        fim(d, !!x.j.erro, x.j.erro ? 'servidor respondeu em ' + ms + ' ms' : 'resposta inesperada');
+      } else if (x.j.erro) {
+        fim(d, false, 'o servidor respondeu: ' + x.j.erro);
+      } else {
+        fim(d, true, 'link válido (' + ms + ' ms): aula ' + (x.j.aula && x.j.aula.numero) + ', até ' + x.j.validade);
+      }
+    })
+    .catch(function (e) { fim(d, false, 'não conseguiu falar com o servidor (' + (e && e.message) + '). Rede, bloqueador ou VPN?'); });
+
+  document.getElementById('copiar').addEventListener('click', function () {
+    var texto = document.getElementById('texto').textContent;
+    var pronto = function () { document.getElementById('copiar').textContent = 'Copiado!'; };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(texto).then(pronto, function () { prompt('Copie:', texto); });
+    else prompt('Copie:', texto);
+  });
+</script>
+</body>
+</html>
