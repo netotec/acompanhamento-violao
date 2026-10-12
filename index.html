@@ -43,8 +43,32 @@
         localStorage.setItem('violao_aparelho_topo', aparelho);
       }
     } catch (e) { aparelho = ''; }
-    frame.src = EXEC + '?t=' + encodeURIComponent(token) + (aparelho ? '&a=' + aparelho : '');
-    frame.hidden = false;
+    var destino = EXEC + '?t=' + encodeURIComponent(token) + (aparelho ? '&a=' + aparelho : '');
+    var abrirDireto = function () { location.replace(destino); };
+
+    // Alguns navegadores (Safari/iPhone) bloqueiam o app dentro de um quadro e mostram "página não encontrada".
+    // Por isso: o app avisa quando carrega; se o aviso não chegar em 8 segundos, abre direto, sem quadro.
+    // Quando isso acontece, lembra e já abre direto nas próximas vezes.
+    var direto = false;
+    try { direto = localStorage.getItem('violao_direto') === '1'; } catch (e) {}
+
+    if (direto) {
+      abrirDireto();
+    } else {
+      var pronto = false;
+      window.addEventListener('message', function (ev) {
+        var d = ev.data;
+        var origemOk = ev.origin === location.origin || /^https:\/\/([a-z0-9-]+\.)*(googleusercontent|google)\.com$/i.test(ev.origin);
+        if (origemOk && d && d.violao === 'pronto') pronto = true;
+      });
+      setTimeout(function () {
+        if (pronto) return;
+        try { localStorage.setItem('violao_direto', '1'); } catch (e) {}
+        abrirDireto();
+      }, 8000);
+      frame.src = destino;
+      frame.hidden = false;
+    }
   }
 </script>
 </body>
