@@ -150,7 +150,7 @@
   let preEnvio = {};
   let ultimoEnvio = null;
   const app = document.getElementById('app');
-  const ABAS = [['geral', 'Visão geral'], ['enviar', 'Enviar link'], ['freq', 'Frequência'], ['evo', 'Evolução'], ['rel', 'Relatório'], ['aulas', 'Aulas'], ['alunos', 'Alunos'], ['disp', 'Disponibilidade'], ['praticas', 'Práticas']];
+  const ABAS = [['geral', 'Visão geral'], ['enviar', 'Enviar link'], ['freq', 'Frequência'], ['evo', 'Evolução'], ['rel', 'Relatório'], ['aulas', 'Aulas'], ['alunos', 'Alunos'], ['planos', 'Planos'], ['disp', 'Disponibilidade'], ['praticas', 'Práticas']];
   let aulaAberta = '';
   let periodo = null;
   let evoAluno = '', evoAula = '', evoData = '', alunoAberto = '', editandoEndereco = false;
@@ -267,7 +267,7 @@
     const ativa = nav.querySelector('.on');
     if (ativa) nav.scrollLeft = ativa.offsetLeft - (nav.clientWidth - ativa.offsetWidth) / 2;
     app.innerHTML = '';
-    ({ geral: telaGeral, enviar: telaEnviar, freq: telaFreq, evo: telaEvolucao, rel: telaRelatorio, aulas: telaAulas, alunos: telaAlunos, disp: telaDisp, praticas: telaPraticas })[aba]();
+    ({ geral: telaGeral, enviar: telaEnviar, freq: telaFreq, evo: telaEvolucao, rel: telaRelatorio, aulas: telaAulas, alunos: telaAlunos, planos: telaPlanos, disp: telaDisp, praticas: telaPraticas })[aba]();
   }
 
   /* ---------- Visão geral ---------- */
@@ -500,7 +500,8 @@
   function telaAlunos() {
     app.append(el('h2', {}, 'Alunos'));
     const g = el('div', { class: 'grade' });
-    g.append(formAluno({ status: 'Ativo', plano: 'Com acompanhamento', valor: 240 }, true));
+    const padrao = (D.planos || []).find(p => p.nome === 'Com acompanhamento' && p.ativo !== 'Não') || (D.planos || []).find(p => p.ativo !== 'Não') || {};
+    g.append(formAluno({ status: 'Ativo', plano: padrao.nome || '', valor: padrao.valor === undefined ? '' : padrao.valor }, true));
     D.alunos.forEach(a => g.append(alunoAberto === a.id ? formAluno(a, false) : resumoAluno(a)));
     app.append(g);
   }
@@ -519,8 +520,13 @@
     const c = el('div', { class: 'cartao', style: novo ? 'border-style:dashed' : '' });
     const nome = el('input', { type: 'text', value: a.nome || '', maxlength: 80, placeholder: 'Nome do aluno' });
     const fone = el('input', { type: 'tel', value: a.telefone || '', placeholder: '94991234567', inputmode: 'numeric' });
-    const plano = opcoes([['Básico', 'Básico (aulas)'], ['Com acompanhamento', 'Com acompanhamento']], a.plano || 'Com acompanhamento');
+    const planos = D.planos || [];
+    const lista = planos.filter(p => p.ativo !== 'Não' || p.nome === a.plano).map(p => [p.nome, p.nome + ' – R$ ' + p.valor]);
+    if (a.plano && !lista.some(x => x[0] === a.plano)) lista.unshift([a.plano, a.plano + ' (plano antigo)']);
+    const plano = opcoes(lista, a.plano || (lista[0] ? lista[0][0] : ''));
     const valor = el('input', { type: 'number', min: 0, step: 10, value: a.valor === '' ? '' : a.valor });
+    // escolher o plano já preenche a mensalidade (dá para ajustar, ex.: desconto)
+    plano.addEventListener('change', () => { const p = planos.find(x => x.nome === plano.value); if (p) valor.value = p.valor; });
     const status = opcoes([['Ativo', 'Ativo'], ['Pausado', 'Pausado'], ['Inativo', 'Inativo']], a.status || 'Ativo');
     c.append(el('div', { class: 'linha entre' }, el('h3', {}, novo ? '+ Novo aluno' : a.nome), novo ? null : el('span', { class: 'mut' }, a.id)));
     if (!novo) {
@@ -551,6 +557,70 @@
     if (!novo) bts.append(el('button', { class: 'bt peq', onclick: () => { alunoAberto = ''; render(); } }, 'Fechar'));
     c.append(bts);
     return c;
+  }
+
+  /* ---------- Planos e valores ---------- */
+  const brl = n => 'R$ ' + (Number(n) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  function telaPlanos() {
+    app.append(el('h2', {}, 'Planos e valores'));
+    app.append(el('p', { class: 'sub' }, 'Os planos que você oferece. Ao escolher o plano no cadastro do aluno, a mensalidade já vem preenchida (dá para ajustar).'));
+    const lista = (D.planos || []).map(p => Object.assign({ anterior: p.nome }, p));
+    const ativos = D.alunos.filter(a => a.status === 'Ativo');
+    const previsto = ativos.reduce((s, a) => s + (Number(a.valor) || 0), 0);
+    app.append(el('div', { class: 'cartao', style: 'margin-bottom:14px' },
+      el('div', { class: 'numeros', style: 'margin:0' },
+        el('div', {}, el('div', { class: 'num' }, String(ativos.length)), el('span', {}, 'alunos ativos')),
+        el('div', {}, el('div', { class: 'num' }, brl(previsto)), el('span', {}, 'previsto por mês')),
+        el('div', {}, el('div', { class: 'num' }, ativos.length ? brl(previsto / ativos.length) : '–'), el('span', {}, 'média por aluno')))));
+
+    const box = el('div', { class: 'grade' });
+    function desenhar() {
+      box.innerHTML = '';
+      lista.forEach((p, i) => {
+        const nome = el('input', { type: 'text', value: p.nome, maxlength: 40 });
+        nome.addEventListener('input', () => { p.nome = nome.value; });
+        const valor = el('input', { type: 'number', min: 0, step: 10, value: p.valor });
+        const porAula = el('div', { class: 'mut' });
+        const aulas = el('input', { type: 'number', min: 0, max: 31, value: p.aulasMes });
+        const calc = () => { porAula.textContent = Number(p.aulasMes) > 0 && Number(p.valor) >= 0 ? '= ' + brl(Number(p.valor) / Number(p.aulasMes)) + ' por aula' : ''; };
+        valor.addEventListener('input', () => { p.valor = valor.value; calc(); });
+        aulas.addEventListener('input', () => { p.aulasMes = aulas.value; calc(); });
+        calc();
+        const desc = el('textarea', { rows: 3, maxlength: 250 }); desc.value = p.descricao;
+        desc.addEventListener('input', () => { p.descricao = desc.value; });
+        const ativo = opcoes([['Sim', 'Disponível'], ['Não', 'Escondido']], p.ativo);
+        ativo.addEventListener('change', () => { p.ativo = ativo.value; });
+        const usando = D.alunos.filter(a => a.plano === p.anterior).length;
+        box.append(el('div', { class: 'cartao' },
+          el('div', { class: 'linha entre' }, el('b', {}, '♪ Plano ' + (i + 1)), el('span', { class: 'selo s-neutro' }, usando + (usando === 1 ? ' aluno' : ' alunos'))),
+          el('label', { class: 'campo' }, 'Nome'), nome,
+          el('div', { class: 'form' },
+            el('div', {}, el('label', { class: 'campo' }, 'Mensalidade (R$)'), valor),
+            el('div', {}, el('label', { class: 'campo' }, 'Aulas por mês'), aulas)),
+          porAula,
+          el('label', { class: 'campo' }, 'O que inclui'), desc,
+          el('label', { class: 'campo' }, 'Situação'), ativo,
+          el('div', { class: 'linha', style: 'margin-top:10px' },
+            el('button', { class: 'bt peq', type: 'button', onclick: () => { lista.splice(i, 1); desenhar(); } }, 'Remover'))));
+      });
+    }
+    desenhar();
+    app.append(box);
+    app.append(el('div', { class: 'linha', style: 'margin-top:14px' },
+      el('button', { class: 'bt', onclick: () => { lista.push({ anterior: '', nome: '', descricao: '', valor: '', aulasMes: 4, ativo: 'Sim' }); desenhar(); } }, '+ Adicionar plano'),
+      el('button', { class: 'bt pri', onclick: e => acao(e.currentTarget, async () => {
+        const r = await chamar('painelSalvarPlanos', lista.map(p => ({ nome: p.nome, anterior: p.anterior, descricao: p.descricao, valor: p.valor, aulasMes: p.aulasMes, ativo: p.ativo })));
+        toast('Planos salvos' + (r.alunosAtualizados ? ' (' + r.alunosAtualizados + ' aluno' + (r.alunosAtualizados === 1 ? '' : 's') + ' acompanharam o novo nome)' : '') + '.');
+        await carregar(true);
+      }) }, 'Salvar planos')));
+
+    app.append(el('div', { class: 'cartao', style: 'margin-top:18px' },
+      el('b', {}, 'Referência de mercado (aulas de violão)'),
+      el('ul', { class: 'mut', style: 'margin:8px 0 0;padding-left:18px' },
+        el('li', {}, 'Parauapebas: professor particular anunciado a R$ 65 por hora; média de R$ 51 por aula particular (todas as matérias).'),
+        el('li', {}, 'Brasil, presencial individual: R$ 250 a R$ 400 por mês (4 aulas); em escolas, R$ 230 a R$ 270 por mês (1 aula por semana).'),
+        el('li', {}, 'Aulas em grupo: R$ 150 a R$ 280 por mês. Online: R$ 50 a R$ 80 por hora.')),
+      el('div', { class: 'mut', style: 'margin-top:8px' }, 'Valores aproximados, de sites de professores e escolas; use como guia, não como regra.')));
   }
 
   /* ---------- Disponibilidade ---------- */
