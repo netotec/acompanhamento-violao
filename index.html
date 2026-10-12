@@ -530,15 +530,22 @@
 
   
   var app = document.getElementById('app');
-  if (app) app.textContent = '♪ Carregando…';
+  if (app) {
+    app.style.cssText = 'text-align:center;padding:48px 20px;color:#7d6a5a;font:600 17px/1.5 system-ui,-apple-system,sans-serif';
+    app.textContent = '♪ Abrindo seus exercícios… a primeira vez pode levar alguns segundos.';
+    setTimeout(function () { if (!window.__INICIAL) app.textContent = '♪ Ainda abrindo… confira se a internet está funcionando.'; }, 12000);
+  }
   var t = new URLSearchParams(location.search).get('t') || '';
   var busca;
   if (!/^[a-f0-9]{8,64}$/i.test(t)) {
     busca = Promise.resolve({ erro: 'Link incompleto. Abra o link completo que o professor enviou pelo WhatsApp.' });
   } else {
-    busca = fetch(EXEC + '?modo=json&t=' + encodeURIComponent(t), { credentials: 'omit', redirect: 'follow' })
-      .then(function (r) { return r.json(); })
-      .catch(function () { return { erro: SEM_REDE }; });
+    var buscar = function () {
+      return fetch(EXEC + '?modo=json&t=' + encodeURIComponent(t), { credentials: 'omit', redirect: 'follow' })
+        .then(function (r) { return r.json(); });
+    };
+    // uma segunda tentativa cobre a primeira chamada lenta/falha do Apps Script
+    busca = buscar().catch(function () { return buscar(); }).catch(function () { return { erro: SEM_REDE }; });
   }
   busca.then(function (inicial) { window.__INICIAL = inicial; iniciar(); });
   
