@@ -2,7 +2,7 @@
 <html>
 <head>
 <base target="_top">
-<title>Painel do professor – Violão</title>
+<title>Painel do Professor – Violão</title>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#2b1a12">
@@ -64,8 +64,8 @@
   .bt:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible { outline:3px solid var(--ambar); outline-offset:1px; }
   a.bt { text-decoration:none; display:inline-flex; align-items:center; gap:6px; color:inherit; }
   a.bt.zap { background:#1f8f4e; color:#fff; border:0; }
-  #sair { background:transparent; color:var(--marcador); border-color:rgba(239,230,210,.45); position:relative; }
-  #sair:hover { background:rgba(0,0,0,.25); }
+  #sair, #atualizar { background:transparent; color:var(--marcador); border-color:rgba(239,230,210,.45); position:relative; }
+  #sair:hover, #atualizar:hover { background:rgba(0,0,0,.25); }
 
   label.campo { display:block; font-weight:800; font-size:13px; margin:10px 0 4px; }
   select, input[type=text], input[type=tel], input[type=number], input[type=date], input[type=time], textarea {
@@ -133,7 +133,11 @@
 <body>
 <header>
   <div class="topo">
-    <div class="linha entre"><h1>Painel do professor</h1><button class="bt peq" id="sair" type="button" hidden>Sair</button></div>
+    <div class="linha entre"><h1>Painel do Professor</h1>
+      <div class="linha" style="flex-wrap:nowrap">
+        <button class="bt peq" id="atualizar" type="button" hidden>↻ Atualizar</button>
+        <button class="bt peq" id="sair" type="button" hidden>Sair</button>
+      </div></div>
     <p id="hoje">Violão · acompanhamento das aulas</p>
     <nav id="abas" role="tablist"></nav>
   </div>
@@ -187,6 +191,7 @@
   function telaLogin(aviso) {
     document.getElementById('abas').innerHTML = '';
     document.getElementById('sair').hidden = true;
+    document.getElementById('atualizar').hidden = true;
     app.innerHTML = '';
     const senha = el('input', { type: 'password', id: 'senha', autocomplete: 'current-password', placeholder: 'Sua senha' });
     const lembrar = el('input', { type: 'checkbox', id: 'lembrar', checked: true });
@@ -212,6 +217,13 @@
       bt, msg));
     setTimeout(() => senha.focus(), 50);
   }
+  // Atualizar: busca os dados de novo (útil depois de mexer na planilha ou de outro aparelho gravar)
+  document.getElementById('atualizar').addEventListener('click', async e => {
+    const btn = e.currentTarget;
+    btn.disabled = true; btn.textContent = 'Atualizando…';
+    try { await carregar(true); toast('Dados atualizados.'); }
+    finally { btn.disabled = false; btn.textContent = '↻ Atualizar'; }
+  });
   document.getElementById('sair').addEventListener('click', () => {
     const k = CHAVE; esquecerSessao();
     google.script.run.withSuccessHandler(() => {}).withFailureHandler(() => {}).painelSair(k);
@@ -251,7 +263,10 @@
     try {
       D = await chamar('painelDados');
       document.getElementById('sair').hidden = MODO !== 'web';
-      document.getElementById('hoje').textContent = 'Hoje é ' + diaSemana(D.hoje).toLowerCase() + ', ' + br(D.hoje);
+      document.getElementById('atualizar').hidden = false;
+      const agora = new Date();
+      const hora = String(agora.getHours()).padStart(2, '0') + ':' + String(agora.getMinutes()).padStart(2, '0');
+      document.getElementById('hoje').textContent = 'Hoje é ' + diaSemana(D.hoje).toLowerCase() + ', ' + br(D.hoje) + ' · atualizado às ' + hora;
       render();
     } catch (e) {
       if (e && e.sessao) return; // a tela de senha já foi mostrada: não apagar
