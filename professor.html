@@ -569,6 +569,7 @@
       bts.append(el('button', { class: 'bt peq', onclick: e => acao(e.currentTarget, async () => {
         await chamar('painelResetar', a.id, 'cadastro'); toast('No próximo link ele faz o cadastro de novo.'); await carregar(true);
       }) }, 'Refazer cadastro'));
+      bts.append(el('button', { class: 'bt peq', style: 'color:var(--alerta);border-color:var(--alerta)', onclick: () => abrirExclusao(a, c) }, 'Excluir aluno'));
     }
     if (!novo) bts.append(el('button', { class: 'bt peq', onclick: () => { alunoAberto = ''; render(); } }, 'Fechar'));
     c.append(bts);
@@ -742,6 +743,38 @@
       g.append(card);
     });
     app.append(g);
+  }
+
+  /* ---------- Excluir aluno (com confirmação digitando o nome) ---------- */
+  const normaliza = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+  function abrirExclusao(a, card) {
+    const velho = card.querySelector('.exclusao');
+    if (velho) { velho.remove(); return; }
+    const box = el('div', { class: 'exclusao', style: 'margin-top:12px;border:1px solid var(--alerta);background:var(--alerta-bg);border-radius:12px;padding:12px' });
+    box.append(el('div', { class: 'mut' }, 'Conferindo o que será apagado…'));
+    card.append(box);
+    chamar('painelResumoExclusao', a.id).then(r => {
+      box.innerHTML = '';
+      const itens = [[r.envios, 'link', 'links enviados'], [r.praticas, 'prática registrada', 'práticas registradas'], [r.aulas, 'aula na frequência', 'aulas na frequência'],
+        [r.avaliacoes, 'avaliação', 'avaliações'], [r.mensalidades, 'mensalidade', 'mensalidades']]
+        .map(([n, um, varios]) => n + ' ' + (n === 1 ? um : varios)).join(', ');
+      const campo = el('input', { type: 'text', placeholder: a.nome, autocomplete: 'off', 'aria-label': 'Digite o nome do aluno para confirmar' });
+      const ok = el('button', { class: 'bt peq', disabled: true, style: 'background:var(--alerta);color:#fff;border-color:var(--alerta)', onclick: e => acao(e.currentTarget, async () => {
+        await chamar('painelExcluirAluno', a.id, campo.value);
+        alunoAberto = '';
+        toast(primeiro(a.nome) + ' foi excluído(a).');
+        await carregar(true);
+      }) }, 'Excluir definitivamente');
+      campo.addEventListener('input', () => { ok.disabled = normaliza(campo.value) !== normaliza(a.nome); });
+      box.append(
+        el('b', {}, 'Excluir ' + a.nome + '?'),
+        el('div', { style: 'margin:6px 0' }, 'Vai apagar o aluno e todo o histórico dele: ' + itens + '. Não dá para desfazer.'),
+        el('div', { class: 'mut' }, 'Se só quer tirar da lista, troque a Situação para Inativo: o histórico fica guardado.'),
+        el('label', { class: 'campo' }, 'Digite o nome do aluno para confirmar'), campo,
+        el('div', { class: 'linha', style: 'margin-top:10px' }, ok,
+          el('button', { class: 'bt peq', onclick: () => box.remove() }, 'Cancelar')));
+      campo.focus();
+    }).catch(e => { box.textContent = e.message; });
   }
 
   /* ---------- Disponibilidade ---------- */
