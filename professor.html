@@ -150,10 +150,10 @@
   let preEnvio = {};
   let ultimoEnvio = null;
   const app = document.getElementById('app');
-  const ABAS = [['geral', 'Visão geral'], ['enviar', 'Enviar link'], ['freq', 'Frequência'], ['evo', 'Evolução'], ['rel', 'Relatório'], ['aulas', 'Aulas'], ['alunos', 'Alunos'], ['planos', 'Planos'], ['disp', 'Disponibilidade'], ['praticas', 'Práticas']];
+  const ABAS = [['geral', 'Visão geral'], ['enviar', 'Enviar link'], ['freq', 'Frequência'], ['evo', 'Evolução'], ['rel', 'Relatório'], ['aulas', 'Aulas'], ['alunos', 'Alunos'], ['planos', 'Planos'], ['pagto', 'Mensalidades'], ['disp', 'Disponibilidade'], ['praticas', 'Práticas']];
   let aulaAberta = '';
   let periodo = null;
-  let evoAluno = '', evoAula = '', evoData = '', alunoAberto = '', editandoEndereco = false;
+  let evoAluno = '', evoAula = '', evoData = '', alunoAberto = '', editandoEndereco = false, mesPagto = '';
   let limitePraticas = 50;
   const DIAS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
   const MOTIVOS = ['Doença', 'Trabalho', 'Estudos', 'Viagem', 'Compromisso familiar', 'Transporte', 'Esqueceu', 'Outro'];
@@ -267,7 +267,7 @@
     const ativa = nav.querySelector('.on');
     if (ativa) nav.scrollLeft = ativa.offsetLeft - (nav.clientWidth - ativa.offsetWidth) / 2;
     app.innerHTML = '';
-    ({ geral: telaGeral, enviar: telaEnviar, freq: telaFreq, evo: telaEvolucao, rel: telaRelatorio, aulas: telaAulas, alunos: telaAlunos, planos: telaPlanos, disp: telaDisp, praticas: telaPraticas })[aba]();
+    ({ geral: telaGeral, enviar: telaEnviar, freq: telaFreq, evo: telaEvolucao, rel: telaRelatorio, aulas: telaAulas, alunos: telaAlunos, planos: telaPlanos, pagto: telaPagto, disp: telaDisp, praticas: telaPraticas })[aba]();
   }
 
   /* ---------- Visão geral ---------- */
@@ -302,6 +302,7 @@
       const selos = el('div', { class: 'linha', style: 'margin-top:6px' });
       if (a.status === 'Pausado') selos.append(el('span', { class: 'selo s-neutro' }, 'Pausado'));
       if (!a.cadastro) selos.append(el('span', { class: 'selo s-aviso' }, 'Cadastro pendente'));
+      if (a.status === 'Ativo' && statusPagto(a, D.hoje.slice(0, 7)).t === 'atrasado') selos.append(el('span', { class: 'selo s-alerta' }, 'Mensalidade atrasada'));
       if (r.envio) selos.append(el('span', { class: 'selo ' + (r.envio.ativo ? 's-ok' : 's-alerta') }, r.envio.ativo ? 'Link até ' + br(r.envio.validade).slice(0, 5) : 'Link vencido'));
       else selos.append(el('span', { class: 'selo s-neutro' }, 'Sem link enviado'));
       if (r.diasSemPraticar != null && r.diasSemPraticar >= 3) selos.append(el('span', { class: 'selo s-alerta' }, r.diasSemPraticar + ' dias sem praticar'));
@@ -621,6 +622,111 @@
         el('li', {}, 'Brasil, presencial individual: R$ 250 a R$ 400 por mês (4 aulas); em escolas, R$ 230 a R$ 270 por mês (1 aula por semana).'),
         el('li', {}, 'Aulas em grupo: R$ 150 a R$ 280 por mês. Online: R$ 50 a R$ 80 por hora.')),
       el('div', { class: 'mut', style: 'margin-top:8px' }, 'Valores aproximados, de sites de professores e escolas; use como guia, não como regra.')));
+  }
+
+  /* ---------- Mensalidades: Pix e controle de pagamento ---------- */
+  const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+  const TIPOS_PIX = ['CPF', 'CNPJ', 'E-mail', 'Telefone', 'Aleatória'];
+  function nomeMes(m) { const [y, mm] = m.split('-').map(Number); return MESES[mm - 1] + ' de ' + y; }
+  function somaMes(m, n) { const [y, mm] = m.split('-').map(Number); const d = new Date(y, mm - 1 + n, 1); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
+  function diasEntre(a, b) { return Math.round((new Date(a) - new Date(b)) / 864e5); }
+  // cortesia: plano "Cortesia" ou mensalidade R$ 0 definida (mensalidade em branco NÃO é cortesia)
+  const ehCortesia = a => /^cortesia$/i.test(String(a.plano || '').trim()) || (a.valor !== '' && a.valor != null && Number(a.valor) === 0);
+  function statusPagto(a, mes) {
+    if (ehCortesia(a)) return { t: 'cortesia' };
+    const reg = (D.mensalidades || []).find(x => x.aluno === a.id && x.mes === mes);
+    if (reg && reg.pago === 'Cortesia') return { t: 'cortesia' };
+    if (reg && reg.pago === 'Sim') return { t: 'pago', data: reg.data, valor: reg.valor };
+    const dia = String(Math.min(28, Math.max(1, Number((D.financeiro || {}).vencimento) || 10))).padStart(2, '0');
+    const venc = mes + '-' + dia;
+    if (D.hoje > venc) return { t: 'atrasado', venc: venc, dias: diasEntre(D.hoje, venc) };
+    return { t: 'pendente', venc: venc };
+  }
+  function textoPix() {
+    const f = D.financeiro || {};
+    return f.chave ? 'Pix (' + f.tipo + '): ' + f.chave + (f.titular ? ' – ' + f.titular : '') : '';
+  }
+
+  function telaPagto() {
+    const f = D.financeiro || { tipo: '', chave: '', titular: '', vencimento: 10 };
+    if (!mesPagto) mesPagto = D.hoje.slice(0, 7);
+    app.append(el('h2', {}, 'Mensalidades'));
+    app.append(el('p', { class: 'sub' }, 'Sua chave Pix e o controle de quem pagou, quem está pendente e quem está atrasado. Alunos com plano Cortesia ficam de fora.'));
+
+    // --- Pix ---
+    const tipo = opcoes(TIPOS_PIX.map(t => [t, t]), f.tipo || 'Telefone');
+    const chave = el('input', { type: 'text', id: 'pix-chave', value: f.chave, placeholder: 'Sua chave Pix', autocomplete: 'off', autocapitalize: 'off', spellcheck: 'false' });
+    const titular = el('input', { type: 'text', id: 'pix-titular', value: f.titular, maxlength: 60, placeholder: 'Nome que aparece no Pix (opcional)' });
+    const venc = el('input', { type: 'number', id: 'pix-venc', min: 1, max: 28, value: f.vencimento || 10 });
+    const salvar = el('button', { class: 'bt pri', onclick: e => acao(e.currentTarget, async () => {
+      await chamar('painelSalvarPix', { tipo: tipo.value, chave: chave.value, titular: titular.value, vencimento: venc.value });
+      toast(chave.value.trim() ? 'Pix salvo.' : 'Chave Pix removida.');
+      await carregar(true);
+    }) }, 'Salvar');
+    app.append(el('div', { class: 'cartao', style: 'margin-bottom:14px' },
+      el('b', {}, 'Chave Pix e vencimento'),
+      el('div', { class: 'form' },
+        el('div', {}, el('label', { class: 'campo' }, 'Tipo da chave'), tipo),
+        el('div', {}, el('label', { class: 'campo', for: 'pix-chave' }, 'Chave'), chave),
+        el('div', {}, el('label', { class: 'campo', for: 'pix-titular' }, 'Titular'), titular),
+        el('div', {}, el('label', { class: 'campo', for: 'pix-venc' }, 'Vence todo dia'), venc)),
+      el('div', { class: 'linha', style: 'margin-top:12px' }, salvar,
+        f.chave ? el('button', { class: 'bt', onclick: ev => copiar(f.chave, ev.currentTarget) }, 'Copiar chave') : null)));
+
+    // --- mês ---
+    app.append(el('div', { class: 'linha entre', style: 'margin:6px 0 10px' },
+      el('button', { class: 'bt peq', 'aria-label': 'Mês anterior', onclick: () => { mesPagto = somaMes(mesPagto, -1); render(); } }, '‹'),
+      el('h3', { style: 'text-transform:capitalize' }, nomeMes(mesPagto)),
+      el('button', { class: 'bt peq', 'aria-label': 'Próximo mês', onclick: () => { mesPagto = somaMes(mesPagto, 1); render(); } }, '›')));
+
+    const cobraveis = D.alunos.filter(a => a.status === 'Ativo');
+    if (!cobraveis.length) { app.append(el('div', { class: 'vazio' }, 'Nenhum aluno ativo.')); return; }
+    const itens = cobraveis.map(a => ({ a: a, s: statusPagto(a, mesPagto) }));
+    const soma = fn => itens.filter(fn).reduce((t, x) => t + (Number(x.a.valor) || 0), 0);
+    const recebido = itens.filter(x => x.s.t === 'pago').reduce((t, x) => t + (Number(x.s.valor) || Number(x.a.valor) || 0), 0);
+    const atrasados = itens.filter(x => x.s.t === 'atrasado');
+    app.append(el('div', { class: 'cartao', style: 'margin-bottom:14px' },
+      el('div', { class: 'numeros', style: 'margin:0' },
+        el('div', {}, el('div', { class: 'num' }, brl(recebido)), el('span', {}, 'recebido')),
+        el('div', {}, el('div', { class: 'num' }, brl(soma(x => x.s.t === 'pendente'))), el('span', {}, 'a receber')),
+        el('div', {}, el('div', { class: 'num', style: atrasados.length ? 'color:var(--alerta)' : '' }, brl(soma(x => x.s.t === 'atrasado'))),
+          el('span', {}, atrasados.length + (atrasados.length === 1 ? ' atrasado' : ' atrasados'))))));
+
+    // atrasados primeiro, depois pendentes, pagos e cortesias
+    const ordem = { atrasado: 0, pendente: 1, pago: 2, cortesia: 3 };
+    itens.sort((x, y) => ordem[x.s.t] - ordem[y.s.t] || x.a.nome.localeCompare(y.a.nome, 'pt-BR'));
+    const g = el('div', { class: 'grade' });
+    itens.forEach(({ a, s }) => {
+      const selo = { pago: ['s-ok', 'Pago' + (s.data ? ' em ' + br(s.data).slice(0, 5) : '')],
+        pendente: ['s-aviso', 'Vence ' + (s.venc ? br(s.venc).slice(0, 5) : '')],
+        atrasado: ['s-alerta', 'Atrasado há ' + s.dias + (s.dias === 1 ? ' dia' : ' dias')],
+        cortesia: ['s-info', 'Cortesia'] }[s.t];
+      const card = el('div', { class: 'cartao' },
+        el('div', { class: 'linha entre' }, el('h3', {}, a.nome), el('span', { class: 'selo ' + selo[0] }, selo[1])),
+        el('div', { class: 'mut' }, (a.plano || 'Sem plano') + (s.t === 'cortesia' ? '' : ' · ' + (a.valor === '' ? 'defina a mensalidade' : brl(a.valor)))));
+      if (s.t !== 'cortesia') {
+        const acoes = el('div', { class: 'linha', style: 'margin-top:10px' });
+        if (s.t === 'pago') {
+          acoes.append(el('button', { class: 'bt peq', onclick: e => acao(e.currentTarget, async () => {
+            await chamar('painelMarcarPagamento', a.id, mesPagto, false, ''); toast('Pagamento desfeito.'); await carregar(true);
+          }) }, 'Desfazer'));
+        } else {
+          const data = el('input', { type: 'date', value: D.hoje, max: D.hoje, style: 'width:auto', 'aria-label': 'Data do pagamento' });
+          acoes.append(
+            el('button', { class: 'bt pri peq', onclick: e => acao(e.currentTarget, async () => {
+              await chamar('painelMarcarPagamento', a.id, mesPagto, true, data.value); toast('Pagamento de ' + primeiro(a.nome) + ' registrado.'); await carregar(true);
+            }) }, 'Marcar como pago'), data);
+          if (a.telefone) {
+            const msg = 'Olá, ' + primeiro(a.nome) + '! Passando para lembrar da mensalidade de ' + nomeMes(mesPagto) +
+              (a.valor !== '' ? ' (' + brl(a.valor) + ')' : '') + '.' + (textoPix() ? ' ' + textoPix() + '.' : '') + ' Qualquer dúvida é só falar!';
+            acoes.append(el('a', { class: 'bt zap peq', href: 'https://wa.me/55' + String(a.telefone).replace(/\D/g, '') + '?text=' + encodeURIComponent(msg), target: '_blank', rel: 'noopener' }, 'Cobrar no WhatsApp'));
+          }
+        }
+        card.append(acoes);
+      }
+      g.append(card);
+    });
+    app.append(g);
   }
 
   /* ---------- Disponibilidade ---------- */
