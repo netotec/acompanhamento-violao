@@ -27,6 +27,7 @@ function onOpen() {
     .addItem('Gerar links pendentes', 'gerarLinks')
     .addItem('Ligar apostilas (PDF) às aulas', 'ligarApostilas')
     .addSeparator()
+    .addItem('Registrar ausência do professor (repor aulas)', 'registrarAusencia')
     .addItem('Processar faltas agora', 'processarFaltas')
     .addItem('Ativar automação (AppSheet)', 'ativarAutomacao')
     .addSeparator()
@@ -528,9 +529,13 @@ function acharHorario_(ss, depoisDe, ocupados) {
   const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
   const d = new Date(depoisDe);
   if (d < hoje) d.setTime(hoje.getTime());
-  for (let n = 1; n <= DIAS_BUSCA; n++) {
+  // dias de ausência não contam na janela de busca: a reposição vai para depois do retorno
+  const ausentes = diasAusencia_(ss);
+  for (let n = 1, uteis = 0; n <= DIAS_BUSCA + 90 && uteis < DIAS_BUSCA; n++) {
     const cand = new Date(d); cand.setDate(d.getDate() + n);
     const chave = dia(cand);
+    if (ausentes.has(chave)) continue;
+    uteis++;
     const exDia = excecoes.filter(x => x.dia === chave);
     if (exDia.some(x => x.tipo === 'indisponivel')) continue;
     const blocos = exDia.filter(x => x.tipo === 'disponivel extra' && x.ini != null && x.fim != null)
@@ -615,4 +620,123 @@ function processarFaltas_(ss) {
     }
   }
   return msgs;
+}
+
+
+/* =====================================================================
+ * AUSÊNCIA DO PROFESSOR (férias, viagem...)
+ * Os períodos ficam na aba Disponibilidade, colunas L (Ausencia_Inicio) e M (Ausencia_Fim).
+ * Menu Violão > Registrar ausência: pede as datas, grava o período e, para cada aula
+ * Agendada dentro dele, marca "Falta justificada" (motivo Outro, obs "Ausência do professor").
+ * A reposição automática então agenda cada aula no primeiro horário livre DEPOIS do retorno.
+ * ===================================================================== */
+const COL_AUS_INI = 'Ausencia_Inicio';
+const COL_AUS_FIM = 'Ausencia_Fim';
+const OBS_AUSENCIA = 'Ausência do professor';
+
+function paraData_(t) {
+  const m = String(t || '').trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (!m) return null;
+  const d = new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]));
+  return d.getMonth() === Number(m[2]) - 1 ? d : null;
+}
+
+/** Períodos de ausência cadastrados: [{ini: Date, fim: Date}] */
+function periodosAusencia_(ss) {
+  const sh = ss.getSheetByName('Disponibilidade');
+  if (!sh) return [];
+  const v = sh.getDataRange().getValues();
+  const a = v[0].indexOf(COL_AUS_INI), b = v[0].indexOf(COL_AUS_FIM);
+  if (a < 0 || b < 0) return [];
+  return v.slice(1).filter(l => l[a] instanceof Date && l[b] instanceof Date && l[b] >= l[a])
+    .map(l => ({ ini: l[a], fim: l[b] }));
+}
+
+/** Conjunto de dias 'yyyy-MM-dd' cobertos por alguma ausência. */
+function diasAusencia_(ss) {
+  const set = new Set();
+  periodosAusencia_(ss).forEach(p => {
+    const d = new Date(p.ini.getFullYear(), p.ini.getMonth(), p.ini.getDate(), 12);
+    const fim = new Date(p.fim.getFullYear(), p.fim.getMonth(), p.fim.getDate(), 12);
+    for (let k = 0; d <= fim && k < 400; k++, d.setDate(d.getDate() + 1)) {
+      set.add(Utilities.formatDate(d, FUSO, 'yyyy-MM-dd'));
+    }
+  });
+  return set;
+}
+
+function registrarAusencia() {
+  soDono_();
+  const ui = SpreadsheetApp.getUi();
+  const r1 = ui.prompt('Ausência do professor', 'Primeiro dia da ausência (dd/mm/aaaa):', ui.ButtonSet.OK_CANCEL);
+  if (r1.getSelectedButton() !== ui.Button.OK) return;
+  const r2 = ui.prompt('Ausência do professor', 'Último dia da ausência (dd/mm/aaaa):', ui.ButtonSet.OK_CANCEL);
+  if (r2.getSelectedButton() !== ui.Button.OK) return;
+  const ini = paraData_(r1.getResponseText()), fim = paraData_(r2.getResponseText());
+  if (!ini || !fim || fim < ini) { ui.alert('Datas inválidas. Use dd/mm/aaaa e o último dia não pode ser antes do primeiro.'); return; }
+  if ((fim - ini) / 86400000 > 120) { ui.alert('Período longo demais (máximo 120 dias).'); return; }
+
+  const msgs = comTrava_(() => {
+    const ss = ss_();
+    const sh = ss.getSheetByName('Disponibilidade');
+    let cab = sh.getRange(1, 1, 1, Math.max(sh.getLastColumn(), 13)).getValues()[0];
+    let a = cab.indexOf(COL_AUS_INI) + 1, b = cab.indexOf(COL_AUS_FIM) + 1;
+    if (!a || !b) {
+      a = 12; b = 13;
+      sh.getRange(1, a, 1, 2).setValues([[COL_AUS_INI, COL_AUS_FIM]]).setFontWeight('bold');
+    }
+    const col = sh.getRange(1, a, Math.max(sh.getLastRow(), 2), 1).getValues();
+    let linha = 2;
+    while (linha <= col.length && col[linha - 1][0] !== '') linha++;
+    sh.getRange(linha, a).setValue(ini).setNumberFormat('dd/MM/yyyy');
+    sh.getRange(linha, b).setValue(fim).setNumberFormat('dd/MM/yyyy');
+    SpreadsheetApp.flush();
+    return aplicarAusencias_(ss);
+  }, 30000);
+  ui.alert('Ausência registrada.\n\n' + (msgs.length ? msgs.join('\n') : 'Nenhuma aula agendada caiu nesse período.'));
+}
+
+/** Para cada aula Agendada dentro de uma ausência: vira Falta justificada (a reposição automática agenda depois). */
+function aplicarAusencias_(ss) {
+  const ausentes = diasAusencia_(ss);
+  if (!ausentes.size) return [];
+  const fr = ss.getSheetByName('Frequencia');
+  const v = fr.getDataRange().getValues();
+  const cab = v[0];
+  const c = n => cab.indexOf(n);
+  const dia = d => Utilities.formatDate(new Date(d), FUSO, 'yyyy-MM-dd');
+  const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+  let marcadas = 0, refeitas = 0;
+
+  for (let i = 1; i < v.length; i++) {
+    const l = v[i];
+    if (!(l[c('Data')] instanceof Date) || l[c('Presenca')] !== 'Agendada') continue;
+    if (l[c('Data')] < hoje || !ausentes.has(dia(l[c('Data')]))) continue;
+    const r = i + 1;
+
+    if (l[c('Tipo')] === 'Reposição') {
+      // reposição que caiu na ausência: apaga e devolve a falta original para ser reagendada
+      for (let k = 1; k < v.length; k++) {
+        const o = v[k];
+        if (o[c('ID_Aluno')] === l[c('ID_Aluno')] && o[c('Reposicao_Data')] instanceof Date &&
+            dia(o[c('Reposicao_Data')]) === dia(l[c('Data')]) && /^Falta/.test(o[c('Presenca')])) {
+          fr.getRange(k + 1, c('Reposicao_Data') + 1).clearContent();
+          v[k][c('Reposicao_Data')] = '';
+        }
+      }
+      fr.getRange(r, 1, 1, cab.length).clearContent();
+      v[i][c('Data')] = ''; v[i][c('ID_Aluno')] = '';
+      refeitas++;
+      continue;
+    }
+    fr.getRange(r, c('Presenca') + 1).setValue('Falta justificada');
+    if (c('Motivo_Falta') >= 0) fr.getRange(r, c('Motivo_Falta') + 1).setValue('Outro');
+    const obs = String(l[c('Obs')] || '');
+    if (obs.indexOf(OBS_AUSENCIA) < 0) fr.getRange(r, c('Obs') + 1).setValue(obs ? obs + ' · ' + OBS_AUSENCIA : OBS_AUSENCIA);
+    marcadas++;
+  }
+  SpreadsheetApp.flush();
+  const msgs = processarFaltas_(ss);
+  return ['Aulas marcadas como falta justificada: ' + marcadas + (refeitas ? ' (reposições refeitas: ' + refeitas + ')' : '') + '.']
+    .concat(msgs);
 }

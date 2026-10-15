@@ -776,6 +776,7 @@ function painelAgendar_(idAluno, n) {
     .filter(s => s.dow >= 0 && s.ini != null && s.fim != null);
   if (!semanais.length) throw new Error('Cadastre pelo menos um horário com uso "Aula" ou "Ambos" na Disponibilidade.');
   const bloqueados = new Set(disp.filter(l => l[6] instanceof Date && semAcento_(l[7]) === 'indisponivel').map(l => iso_(l[6])));
+  diasAusencia_(ss).forEach(x => bloqueados.add(x));
   const ocupados = new Set(F.rows.filter(f => f.Data instanceof Date && f.Presenca === 'Agendada')
     .map(f => iso_(f.Data) + ' ' + String(f.Horario instanceof Date ? Utilities.formatDate(f.Horario, FUSO, 'HH:mm') : f.Horario).slice(0, 5)));
 
