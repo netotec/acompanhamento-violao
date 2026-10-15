@@ -123,6 +123,8 @@
     .tabela.responsiva thead { display:none; }
     .tabela.responsiva tr { display:grid; grid-template-columns:1fr 1fr; gap:6px; padding:8px 0; border-bottom:1px solid var(--pauta); }
     .tabela.responsiva td { border:0; padding:0; }
+    .tabela.responsiva td:last-child:not([data-l]) { grid-column:1 / -1; }
+    .tabela.responsiva td:last-child:not([data-l]) .bt { width:100%; }
   }
   @media (prefers-reduced-motion: no-preference) { .cartao, .aula { transition:border-color .2s; } }
 </style>
@@ -688,7 +690,7 @@
     // --- mês ---
     app.append(el('div', { class: 'linha entre', style: 'margin:6px 0 10px' },
       el('button', { class: 'bt peq', 'aria-label': 'Mês anterior', onclick: () => { mesPagto = somaMes(mesPagto, -1); render(); } }, '‹'),
-      el('h3', { style: 'text-transform:capitalize' }, nomeMes(mesPagto)),
+      el('h3', {}, nomeMes(mesPagto).replace(/^./, c => c.toUpperCase())),
       el('button', { class: 'bt peq', 'aria-label': 'Próximo mês', onclick: () => { mesPagto = somaMes(mesPagto, 1); render(); } }, '›')));
 
     const cobraveis = D.alunos.filter(a => a.status === 'Ativo');
@@ -1024,7 +1026,7 @@
       el('button', { class: 'bt escuro', onclick: e => acao(e.currentTarget, async () => {
         const r = await chamar('painelNovaAula'); aulaAberta = r.id; toast('Aula ' + r.numero + ' criada. Edite o conteúdo e os exercícios.'); await carregar(true);
       }) }, '+ Nova aula')));
-    app.append(el('p', { class: 'sub' }, 'É isto que o aluno vê no link de cada aula. Toque numa aula para ver ou editar.'));
+    app.append(el('p', { class: 'sub', style: 'margin-top:12px' }, 'É isto que o aluno vê no link de cada aula. Toque numa aula para ver ou editar.'));
     D.aulas.forEach(a => {
       const aberta = aulaAberta === a.id;
       const c = el('div', { class: 'cartao', style: 'margin-bottom:10px' + (aberta ? ';border-color:var(--ambar)' : '') });

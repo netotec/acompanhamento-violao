@@ -522,6 +522,7 @@
   window.google = { script: { run: criar() } };
 
   function iniciar() {
+    var a = document.getElementById('app'); if (a) a.removeAttribute('style');
     var codigo = document.getElementById('principal').textContent;
     var s = document.createElement('script');
     s.textContent = codigo;
