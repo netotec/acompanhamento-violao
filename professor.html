@@ -504,7 +504,11 @@
     } else {
       acoes.append(el('button', { class: 'bt peq', title: 'Voltar para Agendada', onclick: e => marcar('Agendada', '', e.currentTarget) }, 'Desfazer'));
     }
-    box.append(
+    acoes.append(el('button', { class: 'bt peq', title: 'Mudar o dia desta aula', onclick: () => {
+      const velho = box.querySelector('.falta-box'); if (velho) velho.remove();
+      const dt = el('input', { type: 'date', value: f.data });
+      const hr = el('input', { type: 'time', value: /^\d{2}:\d{2}/.test(f.horario || '') ? f.horario.slice(0, 5) : '' });
+      box.append(
       el('div', { class: 'data' }, el('span', {}, diaSemana(f.data).slice(0, 3)), el('b', {}, d + '/' + m), el('span', {}, (f.horario || '').slice(0, 5))),
       el('div', { style: 'min-width:0' },
         el('div', { class: 'linha' }, el('b', {}, nomeDe(f.aluno)), el('span', { class: 'selo ' + selo }, f.presenca || '–'), f.tipo === 'Reposição' ? el('span', { class: 'selo s-info' }, 'Reposição') : null),

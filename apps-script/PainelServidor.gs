@@ -750,6 +750,44 @@ function painelPresenca_(linha, status, motivo) {
   return msgs.concat(processarFaltas_(ss_()));
 }
 
+/** Muda o dia (e, se informado, o horário) de uma aula já lançada — por exemplo, para registrar a falta no dia certo. */
+function painelMudarDia(k, linha, dataIso, horario) {
+  checarChave_(k);
+  return comTrava_(() => painelMudarDia_(linha, dataIso, horario));
+}
+
+function painelMudarDia_(linha, dataIso, horario) {
+  const nova = deIso_(dataIso);
+  const sh = ss_().getSheetByName('Frequencia');
+  const cab = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+  linha = Number(linha);
+  if (!(linha >= 2) || linha > sh.getLastRow()) throw new Error('Aula não encontrada.');
+  const atual = sh.getRange(linha, 1, 1, cab.length).getValues()[0];
+  const antiga = atual[cab.indexOf('Data')];
+  if (!(antiga instanceof Date)) throw new Error('Aula não encontrada.');
+  const ehFalta = st => st === 'Falta' || st === 'Falta justificada';
+  const fmt = d => Utilities.formatDate(new Date(d), FUSO, 'dd/MM');
+
+  // a reposição automática guarda "Reposição da aula de dd/MM" na observação: acompanha a nova data
+  if (ehFalta(atual[cab.indexOf('Presenca')]) && fmt(antiga) !== fmt(nova)) {
+    const obsVelha = 'Reposição da aula de ' + fmt(antiga);
+    const v = sh.getDataRange().getValues();
+    for (let i = 1; i < v.length; i++) {
+      if (v[i][cab.indexOf('ID_Aluno')] === atual[cab.indexOf('ID_Aluno')] && v[i][cab.indexOf('Tipo')] === 'Reposição' &&
+          v[i][cab.indexOf('Obs')] === obsVelha) {
+        sh.getRange(i + 1, cab.indexOf('Obs') + 1).setValue('Reposição da aula de ' + fmt(nova));
+      }
+    }
+  }
+
+  const c = cab.indexOf('Data') + 1;
+  sh.getRange(linha, c).setValue(nova).setNumberFormat('dd/MM/yyyy');
+  const h = String(horario || '').trim();
+  if (/^\d{1,2}:\d{2}/.test(h)) gravar_(sh, cab, linha, { Horario: h });
+  SpreadsheetApp.flush();
+  return 'ok';
+}
+
 /** Agenda as próximas N aulas do aluno nos seus horários de "Aula" (ou "Ambos"). */
 function painelAgendar(k, idAluno, n) {
   checarChave_(k);
