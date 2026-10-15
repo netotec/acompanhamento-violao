@@ -26,6 +26,7 @@ function onOpen() {
     .addSeparator()
     .addItem('Gerar links pendentes', 'gerarLinks')
     .addItem('Ligar apostilas (PDF) às aulas', 'ligarApostilas')
+    .addItem('Criar aulas 11 a 30 (apostilas)', 'criarAulas11a30')
     .addSeparator()
     .addItem('Registrar ausência do professor (repor aulas)', 'registrarAusencia')
     .addItem('Processar faltas agora', 'processarFaltas')
@@ -739,4 +740,58 @@ function aplicarAusencias_(ss) {
   const msgs = processarFaltas_(ss);
   return ['Aulas marcadas como falta justificada: ' + marcadas + (refeitas ? ' (reposições refeitas: ' + refeitas + ')' : '') + '.']
     .concat(msgs);
+}
+
+/* =====================================================================
+ * AULAS 11 A 30 (apostilas Intermediário e Avançado)
+ * Menu Violão > Criar aulas 11 a 30. Só cria o que ainda não existe (por ID) e
+ * já liga a apostila em PDF. Pode rodar mais de uma vez sem duplicar.
+ * ===================================================================== */
+const AULAS_11_30 = [
+  [11,"Pestana: o acorde F","Entender a pestana (barra) e montar o Fá maior (F), primeiro na versão simplificada e depois completa.","Treinar o F todo dia, em sessões curtas (5 min, pausa, 5 min). A mão cansa: é normal. Se doer, pare e descanse.",[["Pestana solta","Pestana na casa 1 sem outros dedos; tocar corda por corda e checar todas",5],["F simplificado","Montar F de 4 cordas e trocar com C e G",8],["F completo","Montar F inteiro, segurar 10 segundos, soltar, repetir",7]]],
+  [12,"Bm e acordes com pestana","Aprender Si menor (Bm) e o conceito de formas \"móveis\" para tocar qualquer acorde menor ou maior com pestana.","Tocar uma música que tenha Bm (ex.: sequência G - D - Em - Bm) com a batida da aula 5.",[["Bm","Montar Bm e trocar com G e D",8],["F#m","Montar F#m e trocar com A e E",7],["Forma móvel","Deslizar a forma tipo Em da casa 1 até a 5 dizendo o nome",5]]],
+  [13,"Acordes com sétima","Conhecer os acordes com sétima (A7, D7, E7, G7, C7, B7) e perceber a sensação de \"movimento\" que eles criam.","Escolher uma música com ao menos 2 acordes com sétima e tocá-la completa.",[["Montar os 6 acordes","Montar cada um e tocar corda por corda",8],["Resoluções","Tocar G7-C, A7-D, E7-Am ouvindo a \"chegada\"",8],["Aplicar numa música","Tocar uma música que use sétimas",7]]],
+  [14,"Ritmos: pop-rock e baião","Aprender duas batidas novas e perceber como o ritmo muda o \"estilo\" da mesma sequência de acordes.","Aplicar cada batida em uma música diferente do seu repertório.",[["Pop-rock","Batida de colcheias em G - D - Em - C, metrônomo a 70 bpm",8],["Baião","Padrão simplificado em G - C - D",8],["Comparar","Tocar a mesma sequência nos dois ritmos e perceber a diferença",4]]],
+  [15,"Capotraste e transposição","Usar o capotraste para tocar músicas em tons mais altos com formas de acorde que você já domina, e transpor músicas para o tom da sua voz.","Escolher uma música do repertório e encontrar o tom ideal para cantar e tocar, anotando capotraste e acordes.",[["Capo nas casas 2, 3 e 5","Tocar G - C - D - Em com capotraste e dizer o tom que soa",8],["Transpor uma cifra","Subir ou descer uma música 2 meios-tons por escrito",10]]],
+  [16,"Arpejos e dedilhado em 3/4","Aprender arpejos mais variados e tocar em compasso ternário (3/4), como valsas e baladas.","Dedilhar uma música inteira (ex.: uma valsa ou balada lenta) sem trocar para batida.",[["Arpejo 3/4","G - D - Em - C, um compasso por acorde",8],["Arpejo de 8 notas","Em - Am - C - G com o padrão completo",8],["Aplicar numa música","Tocar uma valsa ou balada dedilhando",9]]],
+  [17,"Escala maior de Dó","Aprender a escala maior de Dó (C) no violão e entender sua fórmula, que vale para todas as escalas maiores.","Tocar a escala de C todo dia, com metrônomo a 60 bpm, uma nota por batida.",[["Subir e descer","Tocar a escala de C subindo e descendo devagar, falando o nome das notas",8],["Em terças","Tocar a escala de 3 em 3 notas (C-D-E, D-E-F...) como exercício de dedos",8],["Melodia","Tocar uma melodia simples (ex.: Ode à Alegria) usando as notas da escala",4]]],
+  [18,"Campo harmônico maior","Entender quais acordes \"combinam\" entre si em cada tom, para tocar de ouvido e criar suas próprias sequências.","Escolher uma música nova e achar os acordes pelo ouvido usando o campo harmônico como guia.",[["Escrever o campo","Escrever o campo harmônico de G e de D de memória",6],["Tocar I - V - vi - IV","Tocar a sequência nos tons de C, G e D",10],["Ouvido","Pôr uma música e tentar achar o tom e os acordes",4]]],
+  [19,"Pentatônica menor","Aprender a escala pentatônica menor (posição 1) e usá-la para improvisar sobre uma base de acordes.","Gravar 30 segundos de improviso e ouvir de volta. Anotar o que gostou.",[["Escala subindo e descendo","Pentatônica de Am, posição 1, metrônomo 60 bpm",8],["Improviso com base","Improvisar sobre Am - G - F - E",10],["Frase própria","Criar e repetir uma frase de 4 notas",4]]],
+  [20,"Revisão e avaliação","Revisar o nível Intermediário e fazer a avaliação para liberar o nível Avançado.","Ensaiar para a avaliação",[["Preparar a avaliação","Ensaiar as músicas e o improviso que serão apresentados na avaliação do nível",20]]],
+  [21,"Funções harmônicas e cadências","Entender para que serve cada acorde dentro do tom e usar isso para harmonizar melodias e substituir acordes.","Analisar a harmonia de 2 músicas e escrever as funções de cada compasso.",[["Ouvir cadências","Tocar as 4 cadências em C e descrever a sensação de cada uma",8],["Analisar música","Marcar T, SD e D numa música do repertório",10],["Substituir","Trocar 2 acordes por substitutos e comparar",7]]],
+  [22,"Acordes com 7M, m7 e 9","Ampliar o vocabulário de acordes com sétima maior, menor com sétima e extensões (add9, sus2, sus4).","Trocar os acordes simples de uma música sua por versões com 7M, m7 ou add9 e ouvir a diferença.",[["Montar todos","Montar os 13 acordes e tocar corda por corda",10],["Sequência","Cmaj7 - Am7 - Dm7 - G7",8],["Arpejo com sus","Dsus4 - D - Dsus2 - D em arpejo",7]]],
+  [23,"Inversões e acordes com baixo","Usar acordes com baixo diferente (slash chords) para criar linhas de baixo suaves entre os acordes.","Escolher uma música simples e acrescentar uma linha de baixo com slash chords.",[["Montar slash chords","Montar os 6 acordes da tabela",8],["Linha descendente","Tocar a sequência C - G/B - Am - Am/G - F - C/E - Dm - G",10],["Aplicar","Usar 2 slash chords numa música conhecida",7]]],
+  [24,"Pentatônica nas 5 posições","Conhecer as 5 posições da pentatônica menor de Lá (Am) para improvisar em todo o braço, não só numa região.","Aprender uma posição nova por dia. No fim da semana, improvisar usando as cinco.",[["Posições 1 e 2","Tocar e unir as duas, subindo e descendo",8],["Posições 3, 4 e 5","Mesma coisa com as demais",10],["Improviso","Improvisar mudando de posição a cada 8 batidas",7]]],
+  [25,"Escala maior no braço todo","Tocar a escala maior em formas móveis que funcionam em qualquer tom, usando a nota raiz como referência.","Escolher uma melodia simples e tocá-la em dois tons diferentes com a forma móvel.",[["Posição em G e C","Tocar a posição com raiz na casa 3 (G) e na casa 8 (C), subindo e descendo",10],["Tocar em tons","Falar o nome de cada nota ao tocar",10],["Melodia","Tocar uma melodia conhecida (ex.: Parabéns, Ode à Alegria) dentro da posição",5]]],
+  [26,"Bossa nova e fingerstyle","Aprender a batida de bossa nova e os primeiros passos do fingerstyle, em que o violão toca baixo, harmonia e melodia ao mesmo tempo.","Ouvir 3 músicas de bossa nova prestando atenção só no violão. Tentar reproduzir a levada.",[["Polegar caminhante","Alternar raiz-quinta em Cmaj7 - Am7 - Dm7 - G7",8],["Bossa simplificada","Polegar + acorde i-m-a sobre a mesma sequência",10],["Melodia + baixo","Tocar uma melodia simples com o polegar fazendo o baixo",7]]],
+  [27,"II-V-I e harmonia de jazz","Dominar a progressão II-V-I, o \"coração\" da harmonia da MPB, bossa nova e jazz, em vários tons.","Tocar o II-V-I nos 4 tons da tabela, sem olhar, e transpor para um quinto tom à sua escolha.",[["II-V-I em C e G","Tocar a progressão devagar, 2 batidas por acorde",10],["Em F e D","Mesma progressão nos tons de F e D",10],["Numa música","Encontrar II-V-I numa música do repertório e marcar",5]]],
+  [28,"Técnicas: ligados, bend e slide","Aprender as técnicas de expressão que dão personalidade aos solos e melodias.","Escolher uma frase de uma música que use técnicas e reproduzir fielmente.",[["Cada técnica isolada","5 minutos de ligado, slide e bend em cordas soltas e na escala",10],["Frase com técnicas","Criar uma frase de 6 a 8 notas usando 2 técnicas",10],["Improviso","Improvisar 1 minuto usando as técnicas",5]]],
+  [29,"Arranjo solo e repertório","Montar um arranjo próprio de uma música, combinando melodia, harmonia e baixo, e construir um repertório de apresentação.","Gravar o arranjo em áudio ou vídeo e ouvir de volta com a partitura de estrutura ao lado.",[["Estrutura","Escrever a estrutura da música escolhida (partes e compassos)",10],["Harmonia","Reharmonizar 2 trechos com acordes novos",10],["Tocar inteira","Tocar o arranjo completo sem parar",10]]],
+  [30,"Projeto final e avaliação","Apresentar o projeto final do curso e receber a avaliação de conclusão.","Ensaiar para a avaliação",[["Preparar a avaliação","Ensaiar as músicas e o improviso que serão apresentados na avaliação do nível",20]]]
+];
+
+function criarAulas11a30() {
+  soDono_();
+  const ss = ss_();
+  const r = comTrava_(() => {
+    const aulas = ss.getSheetByName(ABA.aulas), ex = ss.getSheetByName(ABA.ex);
+    const idsAulas = new Set(aulas.getRange(2, 1, Math.max(aulas.getLastRow() - 1, 1), 1).getValues().map(x => x[0]));
+    const idsEx = new Set(ex.getRange(2, 1, Math.max(ex.getLastRow() - 1, 1), 1).getValues().map(x => x[0]));
+    const base = urlPublica_() + 'apostilas/';
+    const novasAulas = [], novosEx = [];
+    AULAS_11_30.forEach(a => {
+      const num = String(a[0]).padStart(2, '0'), id = 'AU' + num;
+      if (idsAulas.has(id)) return;
+      novasAulas.push([id, a[0], a[1], a[2], a[3], base + 'aula-' + num + '.pdf']);
+      a[4].forEach((e, i) => {
+        const idEx = 'EX' + num + '-' + (i + 1);
+        if (!idsEx.has(idEx)) novosEx.push([idEx, id, i + 1, e[0], e[1], e[2]]);
+      });
+    });
+    if (novasAulas.length) aulas.getRange(aulas.getLastRow() + 1, 1, novasAulas.length, 6).setValues(novasAulas);
+    if (novosEx.length) ex.getRange(ex.getLastRow() + 1, 1, novosEx.length, 6).setValues(novosEx);
+    limparMemo_();
+    return { aulas: novasAulas.length, ex: novosEx.length };
+  }, 30000);
+  SpreadsheetApp.getUi().alert('Criadas ' + r.aulas + ' aulas e ' + r.ex + ' exercícios (aulas que já existiam foram mantidas).');
 }
