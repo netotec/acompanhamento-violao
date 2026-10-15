@@ -505,7 +505,16 @@
       const velho = box.querySelector('.falta-box'); if (velho) velho.remove();
       const dt = el('input', { type: 'date', value: f.data });
       const hr = el('input', { type: 'time', value: /^\d{2}:\d{2}/.test(f.horario || '') ? f.horario.slice(0, 5) : '' });
-      box.append(
+      box.append(el('div', { class: 'falta-box' }, el('b', {}, 'Novo dia:'), dt, hr,
+        el('button', { class: 'bt pri peq', onclick: e => acao(e.currentTarget, async () => {
+          if (!dt.value) throw new Error('Escolha a nova data.');
+          await chamar('painelMudarDia', f.r, dt.value, hr.value);
+          toast('Aula movida para ' + br(dt.value) + '.');
+          await carregar(true);
+        }) }, 'Salvar'),
+        el('button', { class: 'bt peq', onclick: e => e.currentTarget.parentNode.remove() }, 'Cancelar')));
+    } }, 'Mudar dia'));
+    box.append(
       el('div', { class: 'data' }, el('span', {}, diaSemana(f.data).slice(0, 3)), el('b', {}, d + '/' + m), el('span', {}, (f.horario || '').slice(0, 5))),
       el('div', { style: 'min-width:0' },
         el('div', { class: 'linha' }, el('b', {}, nomeDe(f.aluno)), el('span', { class: 'selo ' + selo }, f.presenca || '–'), f.tipo === 'Reposição' ? el('span', { class: 'selo s-info' }, 'Reposição') : null),
