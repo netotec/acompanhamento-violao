@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html>
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Nunito:wght@400;600;800&display=swap">
+<style>
+  /* Mesmo mundo da página da aluna: braço de violão + papel de partitura */
+  :root {
+    --madeira:#2b1a12; --madeira2:#3a2418; --corda:#d9c7a3; --marcador:#efe6d2;
+    --papel:#fbf7ef; --pauta:#e7dccb; --tinta:#2a1d15; --suave:#7d6a5a;
+    --ambar:#c8741f; --ambar-escuro:#9a5212; --ok:#3d7a4f; --ok-bg:#e8f2ea;
+    --alerta:#a13a26; --alerta-bg:#fbe9e6; --aviso:#8a6510; --aviso-bg:#fdf3d8; --info:#2f5f8a; --info-bg:#e6eff7;
+    --titulo:'DM Serif Display', Georgia, serif; --texto:'Nunito', -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--papel); color:var(--tinta); font:15px/1.45 var(--texto); }
+  button, select, input, textarea { font:inherit; color:inherit; }
+
+  header { background:linear-gradient(180deg,var(--madeira2),var(--madeira)); color:var(--marcador); position:relative; overflow:hidden; }
+  header::before { content:''; position:absolute; inset:0; opacity:.35;
+    background:repeating-linear-gradient(180deg,transparent 0 17px,var(--corda) 17px 18px); }
+  .topo { max-width:1120px; margin:0 auto; padding:18px 16px 0; position:relative; }
+  .topo h1 { font-family:var(--titulo); font-weight:400; font-size:28px; margin:0; text-shadow:0 2px 6px rgba(0,0,0,.5); }
+  .topo p { margin:2px 0 12px; color:#d8c9ad; font-size:13px; }
+  nav { display:flex; gap:4px; overflow-x:auto; scrollbar-width:none; }
+  nav::-webkit-scrollbar { display:none; }
+  nav button { flex:none; border:0; background:rgba(0,0,0,.35); color:var(--marcador); padding:9px 14px; border-radius:10px 10px 0 0; cursor:pointer; font-weight:700; white-space:nowrap; }
+  nav button.on { background:var(--papel); color:var(--tinta); }
+  nav button:focus-visible { outline:2px solid var(--ambar); outline-offset:-2px; }
+
+  main { max-width:1120px; margin:0 auto; padding:18px 16px 60px; }
+  h2 { font-family:var(--titulo); font-weight:400; font-size:23px; margin:4px 0 12px; }
+  h3 { margin:0; font-size:16px; }
+  .sub { color:var(--suave); font-size:13px; margin:-8px 0 14px; }
+  .grade { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:14px; }
+  .cartao { background:#fff; border:1px solid var(--pauta); border-radius:14px; padding:14px 16px; min-width:0; }
+  .cartao + .cartao { margin-top:0; }
+  .linha { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .entre { justify-content:space-between; }
+  .mut { color:var(--suave); font-size:13px; }
+  .num { font-family:var(--titulo); font-size:26px; color:var(--ambar-escuro); line-height:1; }
+  .numeros { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:12px 0; }
+  .numeros div { background:var(--papel); border-radius:10px; padding:8px; text-align:center; }
+  .numeros span { display:block; font-size:11px; color:var(--suave); text-transform:uppercase; letter-spacing:.05em; font-weight:800; margin-top:4px; }
+  .selo { display:inline-flex; align-items:center; gap:4px; font-size:12px; font-weight:800; border-radius:999px; padding:2px 9px; white-space:nowrap; }
+  .s-ok { background:var(--ok-bg); color:var(--ok); }
+  .s-alerta { background:var(--alerta-bg); color:var(--alerta); }
+  .s-aviso { background:var(--aviso-bg); color:var(--aviso); }
+  .s-info { background:var(--info-bg); color:var(--info); }
+  .s-neutro { background:var(--papel); color:var(--suave); border:1px solid var(--pauta); }
+
+  .bt { border:1px solid var(--pauta); background:#fff; border-radius:10px; padding:8px 12px; cursor:pointer; font-weight:700; }
+  .bt:hover { border-color:var(--madeira); }
+  .bt.pri { background:linear-gradient(180deg,var(--ambar),var(--ambar-escuro)); color:#fff; border:0; }
+  .bt.pri:hover { filter:brightness(1.07); }
+  .bt.escuro { background:var(--madeira); color:var(--marcador); border-color:var(--madeira); }
+  .bt.peq { padding:5px 9px; font-size:13px; }
+  .bt:disabled { opacity:.55; cursor:default; }
+  .bt:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible { outline:3px solid var(--ambar); outline-offset:1px; }
+  a.bt { text-decoration:none; display:inline-flex; align-items:center; gap:6px; color:inherit; }
+  a.bt.zap { background:#1f8f4e; color:#fff; border:0; }
+  #sair, #atualizar { background:transparent; color:var(--marcador); border-color:rgba(239,230,210,.45); position:relative; }
+  #sair:hover, #atualizar:hover { background:rgba(0,0,0,.25); }
+
+  label.campo { display:block; font-weight:800; font-size:13px; margin:10px 0 4px; }
+  select, input[type=text], input[type=tel], input[type=number], input[type=date], input[type=time], textarea {
+    width:100%; padding:9px 10px; border:1px solid var(--pauta); border-radius:10px; background:#fff; }
+  .form { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:0 12px; }
+  .resultado { margin-top:14px; background:var(--papel); border:1px dashed var(--ambar); border-radius:12px; padding:12px; word-break:break-all; }
+
+  /* frequência */
+  .aula { display:grid; grid-template-columns:92px 1fr auto; gap:12px; align-items:center; background:#fff; border:1px solid var(--pauta); border-radius:12px; padding:10px 12px; margin-bottom:8px; }
+  .aula.pendente { border-color:var(--ambar); box-shadow:0 0 0 3px rgba(200,116,31,.12); }
+  .data { text-align:center; border-right:1px solid var(--pauta); padding-right:10px; }
+  .data b { display:block; font-family:var(--titulo); font-weight:400; font-size:22px; line-height:1; }
+  .data span { font-size:11px; color:var(--suave); text-transform:uppercase; font-weight:800; }
+  .acoes { display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; }
+  .falta-box { grid-column:1 / -1; display:flex; gap:8px; flex-wrap:wrap; align-items:center; background:var(--alerta-bg); border-radius:10px; padding:8px; }
+  .falta-box select { width:auto; flex:1; min-width:160px; }
+
+  /* tabelas editáveis */
+  .tabela { width:100%; border-collapse:collapse; }
+  .tabela th { text-align:left; font-size:12px; color:var(--suave); text-transform:uppercase; letter-spacing:.04em; padding:6px; border-bottom:1px solid var(--pauta); }
+  .tabela td { padding:6px; border-bottom:1px solid var(--pauta); vertical-align:middle; }
+  .rolagem { overflow-x:auto; }
+
+  .feed .item { padding:10px 0; border-bottom:1px solid var(--pauta); }
+  .feed .item:last-child { border-bottom:0; }
+  .coment { margin-top:4px; background:var(--papel); border-left:3px solid var(--ambar); padding:6px 10px; border-radius:6px; font-size:14px; }
+
+  .vazio { text-align:center; color:var(--suave); padding:30px 10px; }
+  .carregando { text-align:center; padding:60px 10px; color:var(--suave); }
+  .toast { cursor:pointer; position:fixed; left:50%; bottom:18px; transform:translateX(-50%); max-width:min(560px,calc(100% - 32px)); background:var(--madeira); color:var(--marcador); padding:12px 16px; border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,.3); z-index:20; white-space:pre-line; }
+  .toast.erro { background:var(--alerta); color:#fff; }
+  .toast[hidden] { display:none; }
+
+  .cartoes-rel { display:none; }
+  .reacoes { display:flex; gap:6px; flex-wrap:wrap; margin:6px 0; }
+  .alunos-resumo { display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; }
+
+  @media (max-width:640px) {
+    main { padding:14px 12px 60px; }
+    .topo { padding:14px 12px 0; }
+    .topo h1 { font-size:23px; }
+    /* 16px nos campos: o iPhone não dá zoom ao tocar */
+    input, select, textarea { font-size:16px; }
+    /* alvos de toque maiores */
+    .bt { min-height:44px; }
+    .bt.peq { min-height:42px; padding:8px 12px; }
+    nav button { padding:12px 14px; }
+    .reacoes { display:grid; grid-template-columns:1fr 1fr; }
+    .reacoes .bt { width:100%; padding:8px 6px; }
+    .acoes .bt { flex:1 1 auto; }
+    .grade { grid-template-columns:1fr; }
+    .tabela-rel { display:none; }
+    .cartoes-rel { display:grid; gap:10px; }
+    .tabela.responsiva td[data-l]::before { content:attr(data-l); display:block; font-size:11px; font-weight:800; color:var(--suave); text-transform:uppercase; letter-spacing:.04em; }
+    .toast { bottom:calc(14px + env(safe-area-inset-bottom, 0px)); }
+    .aula { grid-template-columns:70px 1fr; }
+    .acoes { grid-column:1 / -1; justify-content:flex-start; }
+    .tabela.responsiva thead { display:none; }
+    .tabela.responsiva tr { display:grid; grid-template-columns:1fr 1fr; gap:6px; padding:8px 0; border-bottom:1px solid var(--pauta); }
+    .tabela.responsiva td { border:0; padding:0; }
+  }
+  @media (prefers-reduced-motion: no-preference) { .cartao, .aula { transition:border-color .2s; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="topo">
+    <div class="linha entre"><h1>Painel do Professor</h1>
+      <div class="linha" style="flex-wrap:nowrap">
+        <button class="bt peq" id="atualizar" type="button" hidden>↻ Atualizar</button>
+        <button class="bt peq" id="sair" type="button" hidden>Sair</button>
+      </div></div>
+    <p id="hoje">Violão · acompanhamento das aulas</p>
+    <nav id="abas" role="tablist"></nav>
+  </div>
+</header>
+<main id="app"><div class="carregando">♪ Carregando…</div></main>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+  let CHAVE = <?!= JSON.stringify(chave) ?>;
+  const MODO = <?!= JSON.stringify(modo) ?>;
+  let D = null;
+  let aba = 'geral';
+  let filtroAluno = '';
+  let preEnvio = {};
+  let ultimoEnvio = null;
+  const app = document.getElementById('app');
+  const ABAS = [['geral', 'Visão geral'], ['enviar', 'Enviar link'], ['freq', 'Frequência'], ['evo', 'Evolução'], ['rel', 'Relatório'], ['aulas', 'Aulas'], ['alunos', 'Alunos'], ['planos', 'Planos'], ['pagto', 'Mensalidades'], ['disp', 'Disponibilidade'], ['praticas', 'Práticas']];
+  let aulaAberta = '';
+  let periodo = null;
+  let evoAluno = '', evoAula = '', evoData = '', alunoAberto = '', editandoEndereco = false, mesPagto = '';
+  let limitePraticas = 50;
+  const DIAS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+  const MOTIVOS = ['Doença', 'Trabalho', 'Estudos', 'Viagem', 'Compromisso familiar', 'Transporte', 'Esqueceu', 'Outro'];
+
+  /* ---------- utilidades ---------- */
+  function el(tag, attrs, ...filhos) {
+    const e = document.createElement(tag);
+    Object.entries(attrs || {}).forEach(([k, v]) => {
+      if (v === false || v == null) return;
+      if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
+      else if (k === 'value') e.value = v;
+      else e.setAttribute(k, v === true ? '' : v);
+    });
+    filhos.flat().forEach(f => { if (f == null || f === false) return; e.append(f instanceof Node ? f : document.createTextNode(String(f))); });
+    return e;
+  }
+  function chamar(fn, ...args) {
+    return new Promise((ok, falha) => {
+      google.script.run.withSuccessHandler(ok).withFailureHandler(e => {
+        const msg = String(e.message || e).replace(/^Error:\s*/, '');
+        if (/^SESSAO:/.test(msg)) { esquecerSessao(); telaLogin(msg.replace(/^SESSAO:\s*/, '')); const er = new Error('Entre de novo com a senha.'); er.sessao = true; falha(er); return; }
+        falha(new Error(msg));
+      })[fn](CHAVE, ...args);
+    });
+  }
+
+  /* ---------- login (só no app/web; dentro da planilha não precisa) ---------- */
+  const guardar = (k, v, longo) => { try { (longo ? localStorage : sessionStorage).setItem(k, v); } catch (e) {} };
+  const ler = k => { try { return localStorage.getItem(k) || sessionStorage.getItem(k) || ''; } catch (e) { return ''; } };
+  function esquecerSessao() { try { localStorage.removeItem('violao_sessao'); sessionStorage.removeItem('violao_sessao'); } catch (e) {} CHAVE = ''; }
+  function telaLogin(aviso) {
+    document.getElementById('abas').innerHTML = '';
+    document.getElementById('sair').hidden = true;
+    document.getElementById('atualizar').hidden = true;
+    app.innerHTML = '';
+    const senha = el('input', { type: 'password', id: 'senha', autocomplete: 'current-password', placeholder: 'Sua senha' });
+    const lembrar = el('input', { type: 'checkbox', id: 'lembrar', checked: true });
+    const msg = el('div', { class: 'mut', role: 'status', style: 'margin-top:10px;min-height:1.4em' }, aviso || '');
+    const entrar = async btn => {
+      if (!senha.value) { msg.textContent = 'Digite a senha.'; return; }
+      btn.disabled = true; btn.textContent = 'Entrando…';
+      google.script.run.withSuccessHandler(token => {
+        CHAVE = token; guardar('violao_sessao', token, lembrar.checked); carregar();
+      }).withFailureHandler(e => {
+        btn.disabled = false; btn.textContent = 'Entrar';
+        msg.textContent = String(e.message || e).replace(/^Error:\s*/, ''); msg.style.color = 'var(--alerta)';
+        senha.select();
+      }).painelLogin(senha.value, lembrar.checked);
+    };
+    const bt = el('button', { class: 'bt pri', type: 'button', style: 'width:100%;margin-top:14px;padding:12px', onclick: e => entrar(e.currentTarget) }, 'Entrar');
+    senha.addEventListener('keydown', e => { if (e.key === 'Enter') entrar(bt); });
+    app.append(el('div', { class: 'cartao', style: 'max-width:380px;margin:30px auto' },
+      el('h2', { style: 'margin-top:0' }, '🔒 Área do professor'),
+      el('p', { class: 'mut', style: 'margin-top:-6px' }, 'Digite a senha do painel para continuar.'),
+      el('label', { class: 'campo', for: 'senha' }, 'Senha'), senha,
+      el('label', { class: 'linha', style: 'margin-top:10px;font-size:14px;cursor:pointer' }, lembrar, 'Lembrar neste aparelho por 30 dias'),
+      bt, msg));
+    setTimeout(() => senha.focus(), 50);
+  }
+  // Atualizar: busca os dados de novo (útil depois de mexer na planilha ou de outro aparelho gravar)
+  document.getElementById('atualizar').addEventListener('click', async e => {
+    const btn = e.currentTarget;
+    btn.disabled = true; btn.textContent = 'Atualizando…';
+    try { await carregar(true); toast('Dados atualizados.'); }
+    finally { btn.disabled = false; btn.textContent = '↻ Atualizar'; }
+  });
+  document.getElementById('sair').addEventListener('click', () => {
+    const k = CHAVE; esquecerSessao();
+    google.script.run.withSuccessHandler(() => {}).withFailureHandler(() => {}).painelSair(k);
+    telaLogin('Você saiu do painel.');
+  });
+  let tToast;
+  function toast(msg, erro) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.className = 'toast' + (erro ? ' erro' : ''); t.hidden = false;
+    clearTimeout(tToast); tToast = setTimeout(() => { t.hidden = true; }, Math.max(erro ? 12000 : 9000, msg.length * 80));
+    t.onclick = () => { t.hidden = true; };
+  }
+  function br(iso) { if (!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return iso || ''; const [y, m, d] = iso.split('-'); return d + '/' + m + '/' + y; }
+  function diaSemana(iso) { const [y, m, d] = iso.split('-').map(Number); return DIAS[new Date(y, m - 1, d).getDay()]; }
+  function somaDias(iso, n) { const [y, m, d] = iso.split('-').map(Number); const x = new Date(y, m - 1, d + n); return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0'); }
+  function nomeDe(id) { const a = D.alunos.find(x => x.id === id); return a ? a.nome : id; }
+  function primeiro(n) { return String(n || '').split(' ')[0]; }
+  function opcoes(lista, atual, vazio) {
+    const s = el('select');
+    if (vazio) s.append(el('option', { value: '' }, vazio));
+    lista.forEach(([v, t]) => s.append(el('option', { value: v, selected: String(v) === String(atual) }, t)));
+    return s;
+  }
+  async function acao(btn, fn) {
+    const txt = btn.textContent; btn.disabled = true; btn.textContent = 'Salvando…';
+    try { await fn(); } catch (e) { toast(e.message, true); } finally { btn.disabled = false; btn.textContent = txt; }
+  }
+  function seletorAluno(atual, aoMudar, rotuloVazio) {
+    const s = opcoes(D.alunos.map(a => [a.id, a.nome + ' (' + a.id + ')']), atual, rotuloVazio);
+    s.addEventListener('change', () => aoMudar(s.value));
+    return s;
+  }
+
+  /* ---------- carregar ---------- */
+  async function carregar(silencioso) {
+    if (!silencioso) app.innerHTML = '<div class="carregando">♪ Carregando…</div>';
+    try {
+      D = await chamar('painelDados');
+      document.getElementById('sair').hidden = MODO !== 'web';
+      document.getElementById('atualizar').hidden = false;
+      const agora = new Date();
+      const hora = String(agora.getHours()).padStart(2, '0') + ':' + String(agora.getMinutes()).padStart(2, '0');
+      document.getElementById('hoje').textContent = 'Hoje é ' + diaSemana(D.hoje).toLowerCase() + ', ' + br(D.hoje) + ' · atualizado às ' + hora;
+      render();
+    } catch (e) {
+      if (e && e.sessao) return; // a tela de senha já foi mostrada: não apagar
+      app.innerHTML = '';
+      app.append(el('div', { class: 'vazio' }, 'Não consegui carregar os dados: ' + e.message));
+    }
+  }
+  function irPara(nova) { aba = nova; render(); window.scrollTo(0, 0); }
+
+  function render() {
+    const nav = document.getElementById('abas'); nav.innerHTML = '';
+    ABAS.forEach(([id, t]) => nav.append(el('button', { role: 'tab', 'aria-selected': id === aba ? 'true' : 'false', class: id === aba ? 'on' : '', onclick: () => irPara(id) }, t)));
+    const ativa = nav.querySelector('.on');
+    if (ativa) nav.scrollLeft = ativa.offsetLeft - (nav.clientWidth - ativa.offsetWidth) / 2;
+    app.innerHTML = '';
+    ({ geral: telaGeral, enviar: telaEnviar, freq: telaFreq, evo: telaEvolucao, rel: telaRelatorio, aulas: telaAulas, alunos: telaAlunos, planos: telaPlanos, pagto: telaPagto, disp: telaDisp, praticas: telaPraticas })[aba]();
+  }
+
+  /* ---------- Visão geral ---------- */
+  function telaGeral() {
+    app.append(el('h2', {}, 'Como estão os alunos'));
+    const ativos = D.alunos.filter(a => a.status !== 'Inativo');
+    if (!ativos.length) { app.append(el('div', { class: 'vazio' }, 'Nenhum aluno ainda. Cadastre o primeiro na aba Alunos.')); return; }
+    const pend = D.freq.filter(f => f.presenca === 'Agendada' && f.data < D.hoje);
+    if (pend.length) {
+      app.append(el('div', { class: 'cartao', style: 'border-color:var(--ambar);margin-bottom:14px' },
+        el('div', { class: 'linha entre' },
+          el('div', {}, el('b', {}, pend.length === 1 ? '1 aula passada sem presença marcada' : pend.length + ' aulas passadas sem presença marcada'),
+            el('div', { class: 'mut' }, 'Marque Presente ou Falta para manter a frequência certa e agendar reposições.')),
+          el('button', { class: 'bt pri', onclick: () => irPara('freq') }, 'Marcar agora'))));
+    }
+    // quem precisa de atenção vem primeiro: sem link/vencido, muitos dias sem praticar, cadastro pendente
+    const peso = a => {
+      const r = D.resumo.find(x => x.id === a.id) || {};
+      let p = 0;
+      if (a.status === 'Pausado') return -1;
+      if (!r.envio || !r.envio.ativo) p += 2;
+      if (r.diasSemPraticar != null && r.diasSemPraticar >= 3) p += 2;
+      if (!a.cadastro) p += 1;
+      return p;
+    };
+    ativos.sort((x, y) => peso(y) - peso(x) || x.nome.localeCompare(y.nome, 'pt-BR'));
+    const semPratica = ativos.filter(a => { const r = D.resumo.find(x => x.id === a.id) || {}; return a.status !== 'Pausado' && r.diasSemPraticar != null && r.diasSemPraticar >= 3; }).length;
+    if (semPratica) app.append(el('p', { class: 'sub', style: 'margin-top:0' }, semPratica === 1 ? '1 aluno está há 3 dias ou mais sem praticar.' : semPratica + ' alunos estão há 3 dias ou mais sem praticar.'));
+    const g = el('div', { class: 'grade' });
+    ativos.forEach(a => {
+      const r = D.resumo.find(x => x.id === a.id) || {};
+      const selos = el('div', { class: 'linha', style: 'margin-top:6px' });
+      if (a.status === 'Pausado') selos.append(el('span', { class: 'selo s-neutro' }, 'Pausado'));
+      if (!a.cadastro) selos.append(el('span', { class: 'selo s-aviso' }, 'Cadastro pendente'));
+      if (a.status === 'Ativo' && statusPagto(a, D.hoje.slice(0, 7)).t === 'atrasado') selos.append(el('span', { class: 'selo s-alerta' }, 'Mensalidade atrasada'));
+      if (r.envio) selos.append(el('span', { class: 'selo ' + (r.envio.ativo ? 's-ok' : 's-alerta') }, r.envio.ativo ? 'Link até ' + br(r.envio.validade).slice(0, 5) : 'Link vencido'));
+      else selos.append(el('span', { class: 'selo s-neutro' }, 'Sem link enviado'));
+      if (r.diasSemPraticar != null && r.diasSemPraticar >= 3) selos.append(el('span', { class: 'selo s-alerta' }, r.diasSemPraticar + ' dias sem praticar'));
+      if (r.diasSemPraticar == null && a.cadastro) selos.append(el('span', { class: 'selo s-neutro' }, 'Ainda não praticou'));
+      const freq = r.frequencia == null ? '–' : Math.round(r.frequencia * 100) + '%';
+      g.append(el('div', { class: 'cartao' },
+        el('div', { class: 'linha entre' }, el('h3', {}, a.nome), el('span', { class: 'mut' }, a.id)),
+        selos,
+        el('div', { class: 'numeros' },
+          el('div', {}, el('div', { class: 'num' }, String(r.praticas7 || 0)), el('span', {}, 'dias na semana')),
+          el('div', {}, el('div', { class: 'num' }, String(r.minutos7 || 0)), el('span', {}, 'min na semana')),
+          el('div', {}, el('div', { class: 'num' }, freq), el('span', {}, 'frequência'))),
+        el('div', { class: 'mut' }, r.proxima ? '♪ Próxima aula: ' + diaSemana(r.proxima.data).toLowerCase() + ' ' + br(r.proxima.data).slice(0, 5) + (r.proxima.horario ? ', ' + r.proxima.horario : '') + ' · ' + r.proxima.aula : '♪ Nenhuma aula agendada'),
+        el('div', { class: 'mut' }, r.ultima ? 'Última prática: ' + r.ultima : ''),
+        a.estilos ? el('div', { class: 'mut' }, 'Gosta de: ' + a.estilos) : null,
+        el('div', { class: 'linha', style: 'margin-top:10px' },
+          el('button', { class: 'bt pri peq', onclick: () => { preEnvio = { aluno: a.id }; irPara('enviar'); } }, 'Enviar link'),
+          el('button', { class: 'bt peq', onclick: () => { filtroAluno = a.id; irPara('praticas'); } }, 'Ver práticas'),
+          el('button', { class: 'bt peq', onclick: () => { filtroAluno = a.id; irPara('freq'); } }, 'Frequência'),
+          el('button', { class: 'bt peq', onclick: () => { evoAluno = a.id; evoAula = ''; evoData = ''; irPara('evo'); } }, 'Evolução'))));
+    });
+    app.append(g);
+  }
+
+  /* ---------- Enviar link ---------- */
+  function sugestaoAula(idAluno) {
+    const minhas = D.freq.filter(f => f.aluno === idAluno && f.tipo !== 'Reposição');
+    const passadas = minhas.filter(f => f.data <= D.hoje && f.presenca !== 'Agendada').map(f => f.aula);
+    if (passadas.length) return passadas[passadas.length - 1];
+    return D.aulas[0] ? D.aulas[0].id : '';
+  }
+  function sugestaoValidade(idAluno) {
+    const prox = D.freq.filter(f => f.aluno === idAluno && f.presenca === 'Agendada' && f.data > D.hoje)[0];
+    return prox ? prox.data : somaDias(D.hoje, 7);
+  }
+  function telaEnviar() {
+    app.append(el('h2', {}, 'Enviar link de exercícios'));
+    app.append(el('p', { class: 'sub' }, 'Depois de cada aula presencial: escolha o aluno e a aula dada. A validade já vem com a data da próxima aula.'));
+    app.append(blocoEndereco());
+    const c = el('div', { class: 'cartao', style: 'max-width:640px' });
+    const aviso = el('div', { class: 'mut', role: 'status', style: 'margin-top:6px' });
+    const mostrarAviso = id => {
+      const r = D.resumo.find(x => x.id === id);
+      aviso.textContent = r && r.envio && r.envio.ativo
+        ? 'Atenção: ' + primeiro(nomeDe(id)) + ' já tem um link valendo até ' + br(r.envio.validade).slice(0, 5) + ' (' + r.envio.aula + '). Gerar outro cria um segundo link.'
+        : '';
+    };
+    const alunoSel = seletorAluno(preEnvio.aluno || '', v => { aulaSel.value = v ? sugestaoAula(v) : ''; val.value = v ? sugestaoValidade(v) : somaDias(D.hoje, 7); mostrarAviso(v); }, 'Escolha o aluno');
+    const aulaSel = opcoes(D.aulas.map(a => [a.id, 'Aula ' + a.numero + ' – ' + a.titulo]), preEnvio.aluno ? sugestaoAula(preEnvio.aluno) : '', 'Escolha a aula');
+    const val = el('input', { type: 'date', value: preEnvio.aluno ? sugestaoValidade(preEnvio.aluno) : somaDias(D.hoje, 7), min: D.hoje });
+    const res = el('div');
+    mostrarAviso(preEnvio.aluno || '');
+    c.append(el('label', { class: 'campo' }, 'Aluno'), alunoSel, aviso, el('label', { class: 'campo' }, 'Aula dada (os exercícios dela vão no link)'), aulaSel,
+      el('label', { class: 'campo' }, 'Link válido até'), val,
+      el('div', { class: 'linha', style: 'margin-top:14px' }, el('button', { class: 'bt pri', onclick: e => acao(e.currentTarget, async () => {
+        const r = await chamar('painelCriarEnvio', alunoSel.value, aulaSel.value, val.value);
+        ultimoEnvio = { nome: nomeDe(alunoSel.value), r: r };
+        preEnvio = {};
+        await carregar(true); // o resultado continua na tela até você fechar
+      }) }, 'Gerar link')));
+    if (ultimoEnvio) {
+      const r = ultimoEnvio.r;
+      res.append(el('div', { class: 'resultado' },
+        el('div', { class: 'linha entre' }, el('b', {}, 'Link criado para ' + primeiro(ultimoEnvio.nome) + '!'),
+          el('button', { class: 'bt peq', 'aria-label': 'Fechar', onclick: () => { ultimoEnvio = null; render(); } }, 'Fechar')),
+        el('div', { class: 'mut', style: 'margin:6px 0' }, r.mensagem),
+        el('div', { class: 'linha' },
+          r.whatsapp ? el('a', { class: 'bt zap', href: r.whatsapp, target: '_blank', rel: 'noopener' }, 'Enviar pelo WhatsApp') : el('span', { class: 'selo s-aviso' }, 'Aluno sem telefone: copie o link'),
+          el('button', { class: 'bt', onclick: ev => copiar(r.link, ev.currentTarget) }, 'Copiar link'),
+          el('button', { class: 'bt', onclick: ev => copiar(r.mensagem, ev.currentTarget) }, 'Copiar mensagem'))));
+    }
+    c.append(res);
+    app.append(c);
+
+    // quem está sem link valendo: um toque preenche o formulário
+    const semLink = D.alunos.filter(a => a.status === 'Ativo' && !(D.resumo.find(x => x.id === a.id) || {}).envio?.ativo);
+    if (semLink.length) {
+      const faixa = el('div', { class: 'linha', style: 'margin-top:6px' });
+      semLink.forEach(a => faixa.append(el('button', { class: 'bt peq', onclick: () => { preEnvio = { aluno: a.id }; render(); window.scrollTo(0, 0); } }, a.nome)));
+      app.append(el('h3', { style: 'margin:18px 0 4px' }, 'Sem link valendo'), el('div', { class: 'mut' }, 'Toque no nome para preparar o envio.'), faixa);
+    }
+
+    // links que ainda valem: ficam sempre aqui para reenviar ou copiar
+    const ativos = D.resumo.filter(x => x.envio && x.envio.ativo);
+    app.append(el('h3', { style: 'margin:18px 0 8px' }, 'Links ativos'));
+    if (!ativos.length) { app.append(el('div', { class: 'vazio' }, 'Nenhum link valendo agora.')); return; }
+    const g = el('div', { class: 'grade' });
+    ativos.forEach(x => g.append(el('div', { class: 'cartao' },
+      el('div', { class: 'linha entre' }, el('b', {}, nomeDe(x.id)), el('span', { class: 'selo s-ok' }, 'até ' + br(x.envio.validade).slice(0, 5))),
+      el('div', { class: 'mut', style: 'margin:4px 0 8px' }, x.envio.aula),
+      el('div', { class: 'linha' },
+        x.envio.whatsapp ? el('a', { class: 'bt zap peq', href: x.envio.whatsapp, target: '_blank', rel: 'noopener' }, 'Reenviar no WhatsApp') : null,
+        x.envio.link ? el('button', { class: 'bt peq', onclick: ev => copiar(x.envio.link, ev.currentTarget) }, 'Copiar link') : null))));
+    app.append(g);
+  }
+  /* Onde os links dos alunos abrem: GitHub Pages (qualquer conta) ou o endereço do Google */
+  function blocoEndereco() {
+    const SUGERIDO = 'https://netotec.github.io/acompanhamento-violao/';
+    const definido = !!D.enderecoPublico;
+    const box = el('div', { class: 'cartao', style: 'max-width:640px;margin-bottom:12px' + (definido || editandoEndereco ? '' : ';border-color:var(--ambar)') });
+    if (definido && !editandoEndereco) {
+      box.append(el('div', { class: 'linha entre' },
+        el('div', { class: 'mut' }, 'Os links saem em: ' + D.enderecoPublico),
+        el('button', { class: 'bt peq', onclick: () => { editandoEndereco = true; render(); } }, 'Alterar')));
+      return box;
+    }
+    const campo = el('input', { type: 'text', id: 'endereco', value: D.enderecoPublico || SUGERIDO, placeholder: SUGERIDO, inputmode: 'url', autocapitalize: 'off', spellcheck: 'false' });
+    box.append(
+      el('b', {}, definido ? 'Endereço dos links' : 'Os links ainda saem no endereço do Google'),
+      el('div', { class: 'mut' }, 'Com o endereço do GitHub Pages o aluno abre em qualquer conta ou navegador. Os links já enviados continuam valendo.'),
+      el('label', { class: 'campo', for: 'endereco' }, 'Endereço do GitHub Pages'), campo,
+      el('div', { class: 'linha', style: 'margin-top:10px' },
+        el('button', { class: 'bt pri', onclick: e => acao(e.currentTarget, async () => {
+          const r = await chamar('painelDefinirEndereco', campo.value);
+          editandoEndereco = false;
+          toast('Pronto: os próximos links saem em ' + r);
+          await carregar(true);
+        }) }, 'Salvar endereço'),
+        definido ? el('button', { class: 'bt', onclick: () => { editandoEndereco = false; render(); } }, 'Cancelar') : null));
+    return box;
+  }
+  function copiar(texto, btn) {
+    const original = btn.textContent;
+    const pronto = () => { btn.textContent = 'Copiado!'; setTimeout(() => { btn.textContent = original; }, 2000); };
+    if (navigator.clipboard) navigator.clipboard.writeText(texto).then(pronto, () => prompt('Copie o texto:', texto));
+    else prompt('Copie o texto:', texto);
+  }
+
+  /* ---------- Frequência ---------- */
+  function telaFreq() {
+    app.append(el('h2', {}, 'Frequência'));
+    app.append(el('p', { class: 'sub' }, 'Marque a presença depois de cada aula. Em caso de falta, a reposição é agendada sozinha no seu primeiro horário livre.'));
+    const topo = el('div', { class: 'linha', style: 'margin-bottom:12px' });
+    topo.append(el('div', { style: 'min-width:220px;flex:1;max-width:340px' }, seletorAluno(filtroAluno, v => { filtroAluno = v; render(); }, 'Todos os alunos')));
+    app.append(topo);
+
+    const lista = D.freq.filter(f => !filtroAluno || f.aluno === filtroAluno);
+    const pend = lista.filter(f => f.presenca === 'Agendada' && f.data < D.hoje);
+    const prox = lista.filter(f => f.presenca === 'Agendada' && f.data >= D.hoje);
+    const feitas = lista.filter(f => f.presenca !== 'Agendada').reverse().slice(0, 12);
+    if (pend.length) { app.append(el('h3', { style: 'margin:8px 0' }, 'Para marcar')); pend.forEach(f => app.append(linhaAula(f, true))); }
+    app.append(el('h3', { style: 'margin:14px 0 8px' }, 'Próximas aulas'));
+    if (prox.length) prox.forEach(f => app.append(linhaAula(f, false))); else app.append(el('div', { class: 'vazio' }, 'Nenhuma aula agendada.'));
+
+    const ag = el('div', { class: 'cartao', style: 'margin:14px 0' });
+    const alunoAg = seletorAluno(filtroAluno, () => {}, 'Escolha o aluno');
+    const qtd = opcoes([[1, '1 aula'], [2, '2 aulas'], [4, '4 aulas (1 mês)'], [8, '8 aulas']], 4);
+    ag.append(el('b', {}, 'Agendar próximas aulas'),
+      el('div', { class: 'mut' }, 'Usa seus horários de "Aula" da Disponibilidade e segue a ordem do programa.'),
+      el('div', { class: 'form', style: 'margin-top:4px' }, el('div', {}, el('label', { class: 'campo' }, 'Aluno'), alunoAg), el('div', {}, el('label', { class: 'campo' }, 'Quantas'), qtd)),
+      el('button', { class: 'bt escuro', style: 'margin-top:12px', onclick: e => acao(e.currentTarget, async () => {
+        const r = await chamar('painelAgendar', alunoAg.value, Number(qtd.value));
+        toast('Agendadas: ' + r.map(x => br(x.data).slice(0, 5) + ' ' + x.horario.slice(0, 5)).join(', '));
+        await carregar(true);
+      }) }, 'Agendar'));
+    app.append(ag);
+
+    if (feitas.length) { app.append(el('h3', { style: 'margin:14px 0 8px' }, 'Histórico recente')); feitas.forEach(f => app.append(linhaAula(f, false))); }
+  }
+  function linhaAula(f, pendente) {
+    const [y, m, d] = f.data.split('-');
+    const selo = { 'Presente': 's-ok', 'Reposição': 's-info', 'Falta': 's-alerta', 'Falta justificada': 's-aviso', 'Agendada': 's-neutro' }[f.presenca] || 's-neutro';
+    const box = el('div', { class: 'aula' + (pendente ? ' pendente' : '') });
+    const acoes = el('div', { class: 'acoes' });
+    const marcar = (status, motivo, btn) => acao(btn, async () => {
+      const msgs = await chamar('painelPresenca', f.r, status, motivo || '');
+      toast(msgs && msgs.length ? msgs.join('\n') : 'Presença salva: ' + status + '.');
+      await carregar(true);
+    });
+    const abrirFalta = tipo => {
+      const velho = box.querySelector('.falta-box'); if (velho) velho.remove();
+      const mot = opcoes(MOTIVOS.map(x => [x, x]), '', 'Motivo da falta');
+      box.append(el('div', { class: 'falta-box' }, el('b', {}, tipo + ':'), mot,
+        el('button', { class: 'bt pri peq', onclick: e => marcar(tipo, mot.value, e.currentTarget) }, 'Confirmar'),
+        el('button', { class: 'bt peq', onclick: e => e.currentTarget.parentNode.remove() }, 'Cancelar')));
+    };
+    if (f.presenca === 'Agendada' || pendente) {
+      acoes.append(
+        el('button', { class: 'bt peq', onclick: e => marcar(f.tipo === 'Reposição' ? 'Reposição' : 'Presente', '', e.currentTarget) }, '✓ Presente'),
+        el('button', { class: 'bt peq', onclick: () => abrirFalta('Falta') }, 'Falta'),
+        el('button', { class: 'bt peq', onclick: () => abrirFalta('Falta justificada') }, 'Justificada'));
+    } else {
+      acoes.append(el('button', { class: 'bt peq', title: 'Voltar para Agendada', onclick: e => marcar('Agendada', '', e.currentTarget) }, 'Desfazer'));
+    }
+    box.append(
+      el('div', { class: 'data' }, el('span', {}, diaSemana(f.data).slice(0, 3)), el('b', {}, d + '/' + m), el('span', {}, (f.horario || '').slice(0, 5))),
+      el('div', { style: 'min-width:0' },
+        el('div', { class: 'linha' }, el('b', {}, nomeDe(f.aluno)), el('span', { class: 'selo ' + selo }, f.presenca || '–'), f.tipo === 'Reposição' ? el('span', { class: 'selo s-info' }, 'Reposição') : null),
+        el('div', { class: 'mut' }, f.aulaTitulo + (f.motivo ? ' · motivo: ' + f.motivo : '') + (f.reposicao ? ' · reposição: ' + br(f.reposicao) : '') + (f.obs ? ' · ' + f.obs : ''))),
+      acoes);
+    return box;
+  }
+
+  /* ---------- Alunos ---------- */
+  function telaAlunos() {
+    app.append(el('h2', {}, 'Alunos'));
+    const g = el('div', { class: 'grade' });
+    const padrao = (D.planos || []).find(p => p.nome === 'Com acompanhamento' && p.ativo !== 'Não') || (D.planos || []).find(p => p.ativo !== 'Não') || {};
+    g.append(formAluno({ status: 'Ativo', plano: padrao.nome || '', valor: padrao.valor === undefined ? '' : padrao.valor }, true));
+    D.alunos.forEach(a => g.append(alunoAberto === a.id ? formAluno(a, false) : resumoAluno(a)));
+    app.append(g);
+  }
+  function resumoAluno(a) {
+    const info = [a.telefone || 'sem WhatsApp', a.plano, a.valor === '' ? '' : 'R$ ' + a.valor].filter(Boolean).join(' · ');
+    return el('div', { class: 'cartao' },
+      el('div', { class: 'linha entre' }, el('h3', {}, a.nome), el('span', { class: 'mut' }, a.id)),
+      el('div', { class: 'alunos-resumo' },
+        el('span', { class: 'selo ' + (a.cadastro ? 's-ok' : 's-aviso') }, a.cadastro ? 'Cadastro feito' : 'Cadastro pendente'),
+        el('span', { class: 'selo s-neutro' }, a.status || 'Ativo'),
+        el('span', { class: 'selo s-neutro' }, a.aparelhos + (a.aparelhos === 1 ? ' aparelho' : ' aparelhos'))),
+      el('div', { class: 'mut', style: 'margin-top:6px' }, info),
+      el('button', { class: 'bt peq', style: 'margin-top:10px', onclick: () => { alunoAberto = a.id; render(); } }, 'Editar'));
+  }
+  function formAluno(a, novo) {
+    const c = el('div', { class: 'cartao', style: novo ? 'border-style:dashed' : '' });
+    const nome = el('input', { type: 'text', value: a.nome || '', maxlength: 80, placeholder: 'Nome do aluno' });
+    const fone = el('input', { type: 'tel', value: a.telefone || '', placeholder: '94991234567', inputmode: 'numeric' });
+    const planos = D.planos || [];
+    const lista = planos.filter(p => p.ativo !== 'Não' || p.nome === a.plano).map(p => [p.nome, p.nome + ' – R$ ' + p.valor]);
+    if (a.plano && !lista.some(x => x[0] === a.plano)) lista.unshift([a.plano, a.plano + ' (plano antigo)']);
+    const plano = opcoes(lista, a.plano || (lista[0] ? lista[0][0] : ''));
+    const valor = el('input', { type: 'number', min: 0, step: 10, value: a.valor === '' ? '' : a.valor });
+    // escolher o plano já preenche a mensalidade (dá para ajustar, ex.: desconto)
+    plano.addEventListener('change', () => { const p = planos.find(x => x.nome === plano.value); if (p) valor.value = p.valor; });
+    const status = opcoes([['Ativo', 'Ativo'], ['Pausado', 'Pausado'], ['Inativo', 'Inativo']], a.status || 'Ativo');
+    c.append(el('div', { class: 'linha entre' }, el('h3', {}, novo ? '+ Novo aluno' : a.nome), novo ? null : el('span', { class: 'mut' }, a.id)));
+    if (!novo) {
+      c.append(el('div', { class: 'linha', style: 'margin-top:6px' },
+        el('span', { class: 'selo ' + (a.cadastro ? 's-ok' : 's-aviso') }, a.cadastro ? 'Cadastro feito' : 'Cadastro pendente'),
+        el('span', { class: 'selo s-neutro' }, a.aparelhos + (a.aparelhos === 1 ? ' aparelho' : ' aparelhos')),
+        a.violao ? el('span', { class: 'selo s-neutro' }, 'Violão ' + a.violao) : null));
+      if (a.objetivo) c.append(el('div', { class: 'mut', style: 'margin-top:6px' }, 'Objetivo: ' + a.objetivo));
+    }
+    c.append(el('label', { class: 'campo' }, 'Nome'), nome,
+      el('label', { class: 'campo' }, 'WhatsApp (DDD + número)'), fone,
+      el('div', { class: 'form' }, el('div', {}, el('label', { class: 'campo' }, 'Plano'), plano), el('div', {}, el('label', { class: 'campo' }, 'Mensalidade (R$)'), valor)),
+      el('label', { class: 'campo' }, 'Situação'), status);
+    const bts = el('div', { class: 'linha', style: 'margin-top:12px' },
+      el('button', { class: 'bt ' + (novo ? 'pri' : 'escuro'), onclick: e => acao(e.currentTarget, async () => {
+        const r = await chamar('painelSalvarAluno', { id: novo ? '' : a.id, nome: nome.value, telefone: fone.value, plano: plano.value, valor: valor.value, status: status.value });
+        toast(r.novo ? 'Aluno ' + r.id + ' cadastrado. Agora agende as aulas e envie o primeiro link.' : 'Dados salvos.');
+        await carregar(true);
+      }) }, novo ? 'Cadastrar aluno' : 'Salvar'));
+    if (!novo) {
+      bts.append(el('button', { class: 'bt peq', title: 'Use quando o aluno trocar de celular ou navegador', onclick: e => acao(e.currentTarget, async () => {
+        await chamar('painelResetar', a.id, 'aparelhos'); toast('Aparelhos liberados: o próximo acesso dele registra o aparelho novo.'); await carregar(true);
+      }) }, 'Liberar aparelho novo'));
+      bts.append(el('button', { class: 'bt peq', onclick: e => acao(e.currentTarget, async () => {
+        await chamar('painelResetar', a.id, 'cadastro'); toast('No próximo link ele faz o cadastro de novo.'); await carregar(true);
+      }) }, 'Refazer cadastro'));
+      bts.append(el('button', { class: 'bt peq', style: 'color:var(--alerta);border-color:var(--alerta)', onclick: () => abrirExclusao(a, c) }, 'Excluir aluno'));
+    }
+    if (!novo) bts.append(el('button', { class: 'bt peq', onclick: () => { alunoAberto = ''; render(); } }, 'Fechar'));
+    c.append(bts);
+    return c;
+  }
+
+  /* ---------- Planos e valores ---------- */
+  const brl = n => 'R$ ' + (Number(n) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  function telaPlanos() {
+    app.append(el('h2', {}, 'Planos e valores'));
+    app.append(el('p', { class: 'sub' }, 'Os planos que você oferece. Ao escolher o plano no cadastro do aluno, a mensalidade já vem preenchida (dá para ajustar).'));
+    const lista = (D.planos || []).map(p => Object.assign({ anterior: p.nome }, p));
+    const ativos = D.alunos.filter(a => a.status === 'Ativo');
+    const previsto = ativos.reduce((s, a) => s + (Number(a.valor) || 0), 0);
+    app.append(el('div', { class: 'cartao', style: 'margin-bottom:14px' },
+      el('div', { class: 'numeros', style: 'margin:0' },
+        el('div', {}, el('div', { class: 'num' }, String(ativos.length)), el('span', {}, 'alunos ativos')),
+        el('div', {}, el('div', { class: 'num' }, brl(previsto)), el('span', {}, 'previsto por mês')),
+        el('div', {}, el('div', { class: 'num' }, ativos.length ? brl(previsto / ativos.length) : '–'), el('span', {}, 'média por aluno')))));
+
+    const box = el('div', { class: 'grade' });
+    function desenhar() {
+      box.innerHTML = '';
+      lista.forEach((p, i) => {
+        const nome = el('input', { type: 'text', value: p.nome, maxlength: 40 });
+        nome.addEventListener('input', () => { p.nome = nome.value; });
+        const valor = el('input', { type: 'number', min: 0, step: 10, value: p.valor });
+        const porAula = el('div', { class: 'mut' });
+        const aulas = el('input', { type: 'number', min: 0, max: 31, value: p.aulasMes });
+        const calc = () => { porAula.textContent = Number(p.aulasMes) > 0 && Number(p.valor) >= 0 ? '= ' + brl(Number(p.valor) / Number(p.aulasMes)) + ' por aula' : ''; };
+        valor.addEventListener('input', () => { p.valor = valor.value; calc(); });
+        aulas.addEventListener('input', () => { p.aulasMes = aulas.value; calc(); });
+        calc();
+        const desc = el('textarea', { rows: 3, maxlength: 250 }); desc.value = p.descricao;
+        desc.addEventListener('input', () => { p.descricao = desc.value; });
+        const ativo = opcoes([['Sim', 'Disponível'], ['Não', 'Escondido']], p.ativo);
+        ativo.addEventListener('change', () => { p.ativo = ativo.value; });
+        const usando = D.alunos.filter(a => a.plano === p.anterior).length;
+        box.append(el('div', { class: 'cartao' },
+          el('div', { class: 'linha entre' }, el('b', {}, '♪ Plano ' + (i + 1)), el('span', { class: 'selo s-neutro' }, usando + (usando === 1 ? ' aluno' : ' alunos'))),
+          el('label', { class: 'campo' }, 'Nome'), nome,
+          el('div', { class: 'form' },
+            el('div', {}, el('label', { class: 'campo' }, 'Mensalidade (R$)'), valor),
+            el('div', {}, el('label', { class: 'campo' }, 'Aulas por mês'), aulas)),
+          porAula,
+          el('label', { class: 'campo' }, 'O que inclui'), desc,
+          el('label', { class: 'campo' }, 'Situação'), ativo,
+          el('div', { class: 'linha', style: 'margin-top:10px' },
+            el('button', { class: 'bt peq', type: 'button', onclick: () => { lista.splice(i, 1); desenhar(); } }, 'Remover'))));
+      });
+    }
+    desenhar();
+    app.append(box);
+    app.append(el('div', { class: 'linha', style: 'margin-top:14px' },
+      el('button', { class: 'bt', onclick: () => { lista.push({ anterior: '', nome: '', descricao: '', valor: '', aulasMes: 4, ativo: 'Sim' }); desenhar(); } }, '+ Adicionar plano'),
+      el('button', { class: 'bt pri', onclick: e => acao(e.currentTarget, async () => {
+        const r = await chamar('painelSalvarPlanos', lista.map(p => ({ nome: p.nome, anterior: p.anterior, descricao: p.descricao, valor: p.valor, aulasMes: p.aulasMes, ativo: p.ativo })));
+        toast('Planos salvos' + (r.alunosAtualizados ? ' (' + r.alunosAtualizados + ' aluno' + (r.alunosAtualizados === 1 ? '' : 's') + ' acompanharam o novo nome)' : '') + '.');
+        await carregar(true);
+      }) }, 'Salvar planos')));
+
+    app.append(el('div', { class: 'cartao', style: 'margin-top:18px' },
+      el('b', {}, 'Referência de mercado (aulas de violão)'),
+      el('ul', { class: 'mut', style: 'margin:8px 0 0;padding-left:18px' },
+        el('li', {}, 'Parauapebas: professor particular anunciado a R$ 65 por hora; média de R$ 51 por aula particular (todas as matérias).'),
+        el('li', {}, 'Brasil, presencial individual: R$ 250 a R$ 400 por mês (4 aulas); em escolas, R$ 230 a R$ 270 por mês (1 aula por semana).'),
+        el('li', {}, 'Aulas em grupo: R$ 150 a R$ 280 por mês. Online: R$ 50 a R$ 80 por hora.')),
+      el('div', { class: 'mut', style: 'margin-top:8px' }, 'Valores aproximados, de sites de professores e escolas; use como guia, não como regra.')));
+  }
+
+  /* ---------- Mensalidades: Pix e controle de pagamento ---------- */
+  const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+  const TIPOS_PIX = ['CPF', 'CNPJ', 'E-mail', 'Telefone', 'Aleatória'];
+  function nomeMes(m) { const [y, mm] = m.split('-').map(Number); return MESES[mm - 1] + ' de ' + y; }
+  function somaMes(m, n) { const [y, mm] = m.split('-').map(Number); const d = new Date(y, mm - 1 + n, 1); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
+  function diasEntre(a, b) { return Math.round((new Date(a) - new Date(b)) / 864e5); }
+  // cortesia: plano "Cortesia" ou mensalidade R$ 0 definida (mensalidade em branco NÃO é cortesia)
+  const ehCortesia = a => /^cortesia$/i.test(String(a.plano || '').trim()) || (a.valor !== '' && a.valor != null && Number(a.valor) === 0);
+  function statusPagto(a, mes) {
+    if (ehCortesia(a)) return { t: 'cortesia' };
+    const reg = (D.mensalidades || []).find(x => x.aluno === a.id && x.mes === mes);
+    if (reg && reg.pago === 'Cortesia') return { t: 'cortesia' };
+    if (reg && reg.pago === 'Sim') return { t: 'pago', data: reg.data, valor: reg.valor };
+    const dia = String(Math.min(28, Math.max(1, Number((D.financeiro || {}).vencimento) || 10))).padStart(2, '0');
+    const venc = mes + '-' + dia;
+    if (D.hoje > venc) return { t: 'atrasado', venc: venc, dias: diasEntre(D.hoje, venc) };
+    return { t: 'pendente', venc: venc };
+  }
+  function textoPix() {
+    const f = D.financeiro || {};
+    return f.chave ? 'Pix (' + f.tipo + '): ' + f.chave + (f.titular ? ' – ' + f.titular : '') : '';
+  }
+
+  function telaPagto() {
+    const f = D.financeiro || { tipo: '', chave: '', titular: '', vencimento: 10 };
+    if (!mesPagto) mesPagto = D.hoje.slice(0, 7);
+    app.append(el('h2', {}, 'Mensalidades'));
+    app.append(el('p', { class: 'sub' }, 'Sua chave Pix e o controle de quem pagou, quem está pendente e quem está atrasado. Alunos com plano Cortesia ficam de fora.'));
+
+    // --- Pix ---
+    const tipo = opcoes(TIPOS_PIX.map(t => [t, t]), f.tipo || 'Telefone');
+    const chave = el('input', { type: 'text', id: 'pix-chave', value: f.chave, placeholder: 'Sua chave Pix', autocomplete: 'off', autocapitalize: 'off', spellcheck: 'false' });
+    const titular = el('input', { type: 'text', id: 'pix-titular', value: f.titular, maxlength: 60, placeholder: 'Nome que aparece no Pix (opcional)' });
+    const venc = el('input', { type: 'number', id: 'pix-venc', min: 1, max: 28, value: f.vencimento || 10 });
+    const salvar = el('button', { class: 'bt pri', onclick: e => acao(e.currentTarget, async () => {
+      await chamar('painelSalvarPix', { tipo: tipo.value, chave: chave.value, titular: titular.value, vencimento: venc.value });
+      toast(chave.value.trim() ? 'Pix salvo.' : 'Chave Pix removida.');
+      await carregar(true);
+    }) }, 'Salvar');
+    app.append(el('div', { class: 'cartao', style: 'margin-bottom:14px' },
+      el('b', {}, 'Chave Pix e vencimento'),
+      el('div', { class: 'form' },
+        el('div', {}, el('label', { class: 'campo' }, 'Tipo da chave'), tipo),
+        el('div', {}, el('label', { class: 'campo', for: 'pix-chave' }, 'Chave'), chave),
+        el('div', {}, el('label', { class: 'campo', for: 'pix-titular' }, 'Titular'), titular),
+        el('div', {}, el('label', { class: 'campo', for: 'pix-venc' }, 'Vence todo dia'), venc)),
+      el('div', { class: 'linha', style: 'margin-top:12px' }, salvar,
+        f.chave ? el('button', { class: 'bt', onclick: ev => copiar(f.chave, ev.currentTarget) }, 'Copiar chave') : null)));
+
+    // --- mês ---
+    app.append(el('div', { class: 'linha entre', style: 'margin:6px 0 10px' },
+      el('button', { class: 'bt peq', 'aria-label': 'Mês anterior', onclick: () => { mesPagto = somaMes(mesPagto, -1); render(); } }, '‹'),
+      el('h3', { style: 'text-transform:capitalize' }, nomeMes(mesPagto)),
+      el('button', { class: 'bt peq', 'aria-label': 'Próximo mês', onclick: () => { mesPagto = somaMes(mesPagto, 1); render(); } }, '›')));
+
+    const cobraveis = D.alunos.filter(a => a.status === 'Ativo');
+    if (!cobraveis.length) { app.append(el('div', { class: 'vazio' }, 'Nenhum aluno ativo.')); return; }
+    const itens = cobraveis.map(a => ({ a: a, s: statusPagto(a, mesPagto) }));
+    const soma = fn => itens.filter(fn).reduce((t, x) => t + (Number(x.a.valor) || 0), 0);
+    const recebido = itens.filter(x => x.s.t === 'pago').reduce((t, x) => t + (Number(x.s.valor) || Number(x.a.valor) || 0), 0);
+    const atrasados = itens.filter(x => x.s.t === 'atrasado');
+    app.append(el('div', { class: 'cartao', style: 'margin-bottom:14px' },
+      el('div', { class: 'numeros', style: 'margin:0' },
+        el('div', {}, el('div', { class: 'num' }, brl(recebido)), el('span', {}, 'recebido')),
+        el('div', {}, el('div', { class: 'num' }, brl(soma(x => x.s.t === 'pendente'))), el('span', {}, 'a receber')),
+        el('div', {}, el('div', { class: 'num', style: atrasados.length ? 'color:var(--alerta)' : '' }, brl(soma(x => x.s.t === 'atrasado'))),
+          el('span', {}, atrasados.length + (atrasados.length === 1 ? ' atrasado' : ' atrasados'))))));
+
+    // atrasados primeiro, depois pendentes, pagos e cortesias
+    const ordem = { atrasado: 0, pendente: 1, pago: 2, cortesia: 3 };
+    itens.sort((x, y) => ordem[x.s.t] - ordem[y.s.t] || x.a.nome.localeCompare(y.a.nome, 'pt-BR'));
+    const g = el('div', { class: 'grade' });
+    itens.forEach(({ a, s }) => {
+      const selo = { pago: ['s-ok', 'Pago' + (s.data ? ' em ' + br(s.data).slice(0, 5) : '')],
+        pendente: ['s-aviso', 'Vence ' + (s.venc ? br(s.venc).slice(0, 5) : '')],
+        atrasado: ['s-alerta', 'Atrasado há ' + s.dias + (s.dias === 1 ? ' dia' : ' dias')],
+        cortesia: ['s-info', 'Cortesia'] }[s.t];
+      const card = el('div', { class: 'cartao' },
+        el('div', { class: 'linha entre' }, el('h3', {}, a.nome), el('span', { class: 'selo ' + selo[0] }, selo[1])),
+        el('div', { class: 'mut' }, (a.plano || 'Sem plano') + (s.t === 'cortesia' ? '' : ' · ' + (a.valor === '' ? 'defina a mensalidade' : brl(a.valor)))));
+      if (s.t !== 'cortesia') {
+        const acoes = el('div', { class: 'linha', style: 'margin-top:10px' });
+        if (s.t === 'pago') {
+          acoes.append(el('button', { class: 'bt peq', onclick: e => acao(e.currentTarget, async () => {
+            await chamar('painelMarcarPagamento', a.id, mesPagto, false, ''); toast('Pagamento desfeito.'); await carregar(true);
+          }) }, 'Desfazer'));
+        } else {
+          const data = el('input', { type: 'date', value: D.hoje, max: D.hoje, style: 'width:auto', 'aria-label': 'Data do pagamento' });
+          acoes.append(
+            el('button', { class: 'bt pri peq', onclick: e => acao(e.currentTarget, async () => {
+              await chamar('painelMarcarPagamento', a.id, mesPagto, true, data.value); toast('Pagamento de ' + primeiro(a.nome) + ' registrado.'); await carregar(true);
+            }) }, 'Marcar como pago'), data);
+          if (a.telefone) {
+            const msg = 'Olá, ' + primeiro(a.nome) + '! Passando para lembrar da mensalidade de ' + nomeMes(mesPagto) +
+              (a.valor !== '' ? ' (' + brl(a.valor) + ')' : '') + '.' + (textoPix() ? ' ' + textoPix() + '.' : '') + ' Qualquer dúvida é só falar!';
+            acoes.append(el('a', { class: 'bt zap peq', href: 'https://wa.me/55' + String(a.telefone).replace(/\D/g, '') + '?text=' + encodeURIComponent(msg), target: '_blank', rel: 'noopener' }, 'Cobrar no WhatsApp'));
+          }
+        }
+        card.append(acoes);
+      }
+      g.append(card);
+    });
+    app.append(g);
+  }
+
+  /* ---------- Excluir aluno (com confirmação digitando o nome) ---------- */
+  const normaliza = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+  function abrirExclusao(a, card) {
+    const velho = card.querySelector('.exclusao');
+    if (velho) { velho.remove(); return; }
+    const box = el('div', { class: 'exclusao', style: 'margin-top:12px;border:1px solid var(--alerta);background:var(--alerta-bg);border-radius:12px;padding:12px' });
+    box.append(el('div', { class: 'mut' }, 'Conferindo o que será apagado…'));
+    card.append(box);
+    chamar('painelResumoExclusao', a.id).then(r => {
+      box.innerHTML = '';
+      const itens = [[r.envios, 'link', 'links enviados'], [r.praticas, 'prática registrada', 'práticas registradas'], [r.aulas, 'aula na frequência', 'aulas na frequência'],
+        [r.avaliacoes, 'avaliação', 'avaliações'], [r.mensalidades, 'mensalidade', 'mensalidades']]
+        .map(([n, um, varios]) => n + ' ' + (n === 1 ? um : varios)).join(', ');
+      const campo = el('input', { type: 'text', placeholder: a.nome, autocomplete: 'off', 'aria-label': 'Digite o nome do aluno para confirmar' });
+      const ok = el('button', { class: 'bt peq', disabled: true, style: 'background:var(--alerta);color:#fff;border-color:var(--alerta)', onclick: e => acao(e.currentTarget, async () => {
+        await chamar('painelExcluirAluno', a.id, campo.value);
+        alunoAberto = '';
+        toast(primeiro(a.nome) + ' foi excluído(a).');
+        await carregar(true);
+      }) }, 'Excluir definitivamente');
+      campo.addEventListener('input', () => { ok.disabled = normaliza(campo.value) !== normaliza(a.nome); });
+      box.append(
+        el('b', {}, 'Excluir ' + a.nome + '?'),
+        el('div', { style: 'margin:6px 0' }, 'Vai apagar o aluno e todo o histórico dele: ' + itens + '. Não dá para desfazer.'),
+        el('div', { class: 'mut' }, 'Se só quer tirar da lista, troque a Situação para Inativo: o histórico fica guardado.'),
+        el('label', { class: 'campo' }, 'Digite o nome do aluno para confirmar'), campo,
+        el('div', { class: 'linha', style: 'margin-top:10px' }, ok,
+          el('button', { class: 'bt peq', onclick: () => box.remove() }, 'Cancelar')));
+      campo.focus();
+    }).catch(e => { box.textContent = e.message; });
+  }
+
+  /* ---------- Disponibilidade ---------- */
+  function telaDisp() {
+    app.append(el('h2', {}, 'Minha disponibilidade'));
+    app.append(el('p', { class: 'sub' }, '"Aula" = horários das aulas fixas. "Reposição" = só para repor faltas. Cada aula ocupa 1 hora; um horário de 18:00 às 21:00 vira 3 aulas possíveis.'));
+    const sem = D.disp.semanais.map(s => Object.assign({}, s));
+    const exc = D.disp.excecoes.map(x => Object.assign({}, x));
+    const c1 = el('div', { class: 'cartao' });
+    const c2 = el('div', { class: 'cartao', style: 'margin-top:14px' });
+    function desenhar() {
+      c1.innerHTML = ''; c2.innerHTML = '';
+      c1.append(el('b', {}, 'Horários da semana'));
+      const t = el('table', { class: 'tabela responsiva' }, el('thead', {}, el('tr', {}, ['Dia', 'Início', 'Fim', 'Uso', 'Ativo', ''].map(h => el('th', {}, h)))));
+      const tb = el('tbody');
+      sem.forEach((s, i) => {
+        const dia = opcoes(DIAS.slice(1).concat(DIAS[0]).map(d => [d, d]), s.dia); dia.onchange = () => { s.dia = dia.value; };
+        const ini = el('input', { type: 'time', value: s.ini, step: 1800 }); ini.onchange = () => { s.ini = ini.value; };
+        const fim = el('input', { type: 'time', value: s.fim, step: 1800 }); fim.onchange = () => { s.fim = fim.value; };
+        const uso = opcoes([['Aula', 'Aula'], ['Reposição', 'Reposição'], ['Ambos', 'Ambos']], s.uso); uso.onchange = () => { s.uso = uso.value; };
+        const at = opcoes([['Sim', 'Sim'], ['Não', 'Não']], s.ativo); at.onchange = () => { s.ativo = at.value; };
+        tb.append(el('tr', {}, el('td', { 'data-l': 'Dia' }, dia), el('td', { 'data-l': 'Início' }, ini), el('td', { 'data-l': 'Fim' }, fim), el('td', { 'data-l': 'Uso' }, uso), el('td', { 'data-l': 'Ativo' }, at),
+          el('td', {}, el('button', { class: 'bt peq', 'aria-label': 'Remover horário', onclick: () => { sem.splice(i, 1); desenhar(); } }, 'Remover'))));
+      });
+      t.append(tb);
+      c1.append(el('div', { class: 'rolagem' }, t),
+        el('button', { class: 'bt peq', style: 'margin-top:8px', onclick: () => { sem.push({ dia: 'Quarta', ini: '18:00', fim: '19:00', uso: 'Aula', ativo: 'Sim' }); desenhar(); } }, '+ Adicionar horário'));
+
+      c2.append(el('b', {}, 'Exceções por data'), el('div', { class: 'mut' }, 'Um dia em que você não pode (feriado, plantão) ou um horário extra só naquela data.'));
+      const t2 = el('table', { class: 'tabela responsiva' }, el('thead', {}, el('tr', {}, ['Data', 'Situação', 'Início', 'Fim', ''].map(h => el('th', {}, h)))));
+      const tb2 = el('tbody');
+      exc.forEach((x, i) => {
+        const data = el('input', { type: 'date', value: x.data }); data.onchange = () => { x.data = data.value; };
+        const sit = opcoes([['Indisponível', 'Indisponível'], ['Disponível extra', 'Disponível extra']], x.situacao || 'Indisponível');
+        const ini = el('input', { type: 'time', value: x.ini, step: 1800 }); ini.onchange = () => { x.ini = ini.value; };
+        const fim = el('input', { type: 'time', value: x.fim, step: 1800 }); fim.onchange = () => { x.fim = fim.value; };
+        const extra = () => { const on = sit.value === 'Disponível extra'; ini.disabled = !on; fim.disabled = !on; };
+        sit.onchange = () => { x.situacao = sit.value; extra(); }; extra();
+        tb2.append(el('tr', {}, el('td', { 'data-l': 'Data' }, data), el('td', { 'data-l': 'Situação' }, sit), el('td', { 'data-l': 'Início' }, ini), el('td', { 'data-l': 'Fim' }, fim),
+          el('td', {}, el('button', { class: 'bt peq', onclick: () => { exc.splice(i, 1); desenhar(); } }, 'Remover'))));
+      });
+      t2.append(tb2);
+      c2.append(el('div', { class: 'rolagem' }, t2),
+        el('button', { class: 'bt peq', style: 'margin-top:8px', onclick: () => { exc.push({ data: D.hoje, situacao: 'Indisponível', ini: '', fim: '' }); desenhar(); } }, '+ Adicionar exceção'));
+    }
+    desenhar();
+    app.append(c1, c2, el('button', { class: 'bt pri', style: 'margin-top:14px', onclick: e => acao(e.currentTarget, async () => {
+      await chamar('painelSalvarDisp', sem, exc); toast('Disponibilidade salva.'); await carregar(true);
+    }) }, 'Salvar disponibilidade'));
+  }
+
+  /* ---------- Práticas ---------- */
+  function telaPraticas() {
+    app.append(el('h2', {}, 'Práticas registradas'));
+    app.append(el('div', { style: 'max-width:340px;margin-bottom:12px' }, seletorAluno(filtroAluno, v => { filtroAluno = v; limitePraticas = 50; render(); }, 'Todos os alunos')));
+    const todas = D.registros.filter(r => !filtroAluno || r.aluno === filtroAluno);
+    if (!todas.length) { app.append(el('div', { class: 'vazio' }, 'Nenhuma prática registrada ainda.')); return; }
+    const lista = todas.slice(0, limitePraticas);
+    const c = el('div', { class: 'cartao feed' });
+    lista.forEach(r => {
+      const dif = { 'Fácil': 's-ok', 'Médio': 's-aviso', 'Difícil': 's-alerta' }[r.dificuldade];
+      c.append(el('div', { class: 'item' },
+        el('div', { class: 'linha entre' }, el('b', {}, r.nome || nomeDe(r.aluno)), el('span', { class: 'mut' }, r.quando + (r.aparelho ? ' · ' + r.aparelho.split(' ')[0] : ''))),
+        el('div', { class: 'mut' }, r.aula),
+        el('div', { class: 'linha', style: 'margin-top:4px' }, el('span', {}, '♪ ' + r.exercicios),
+          r.minutos ? el('span', { class: 'selo s-neutro' }, r.minutos + ' min') : null,
+          dif ? el('span', { class: 'selo ' + dif }, r.dificuldade) : null),
+        r.comentario ? el('div', { class: 'coment' }, '“' + r.comentario + '”') : null));
+    });
+    app.append(c);
+    if (todas.length > lista.length) {
+      app.append(el('div', { class: 'linha', style: 'margin-top:12px;justify-content:center' },
+        el('span', { class: 'mut' }, 'Mostrando ' + lista.length + ' de ' + todas.length),
+        el('button', { class: 'bt peq', onclick: () => { limitePraticas += 50; render(); } }, 'Mostrar mais')));
+    }
+  }
+
+  /* ---------- Evolução: como o aluno reagiu a cada exercício ---------- */
+  const REACOES = [['Dominou', 's-ok', 4], ['Foi bem', 's-info', 3], ['Com dificuldade', 's-aviso', 2], ['Não conseguiu', 's-alerta', 1]];
+  const reacaoInfo = nome => REACOES.find(r => r[0] === nome);
+  function exTitulo(id) {
+    for (const a of D.aulas) { const x = a.exercicios.find(e => e.id === id); if (x) return x.titulo; }
+    return id;
+  }
+  function aulaTitulo(id) { const a = D.aulas.find(x => x.id === id); return a ? 'Aula ' + a.numero + ' – ' + a.titulo : id; }
+
+  function telaEvolucao() {
+    app.append(el('h2', {}, 'Evolução do aluno'));
+    app.append(el('p', { class: 'sub' }, 'Depois da aula presencial, marque como o aluno reagiu a cada exercício. O histórico mostra se ele está evoluindo.'));
+    app.append(el('div', { style: 'max-width:340px;margin-bottom:12px' },
+      seletorAluno(evoAluno, v => { evoAluno = v; evoAula = ''; evoData = ''; render(); }, 'Escolha o aluno')));
+    if (!evoAluno) { app.append(el('div', { class: 'vazio' }, 'Escolha o aluno para registrar ou ver a evolução.')); return; }
+    if (!evoAula) evoAula = sugestaoAula(evoAluno);
+    if (!evoData) evoData = D.hoje;
+    const aval = (D.avaliacoes || []).filter(a => a.aluno === evoAluno);
+
+    // --- registrar ---
+    const aula = D.aulas.find(a => a.id === evoAula);
+    const escolhas = {}, notas = {};
+    aval.filter(a => a.data === evoData && a.aula === evoAula).forEach(a => { escolhas[a.ex] = a.reacao; notas[a.ex] = a.obs; });
+    const c = el('div', { class: 'cartao', style: 'margin-bottom:16px' });
+    const aulaSel = opcoes(D.aulas.map(a => [a.id, 'Aula ' + a.numero + ' – ' + a.titulo]), evoAula, 'Escolha a aula');
+    aulaSel.addEventListener('change', () => { evoAula = aulaSel.value; render(); });
+    const dataIn = el('input', { type: 'date', value: evoData, max: D.hoje });
+    dataIn.addEventListener('change', () => { if (dataIn.value) { evoData = dataIn.value; render(); } });
+    c.append(el('b', {}, 'Registrar a aula'),
+      el('div', { class: 'form', style: 'margin-top:4px' },
+        el('div', {}, el('label', { class: 'campo' }, 'Aula dada'), aulaSel),
+        el('div', {}, el('label', { class: 'campo' }, 'Dia da aula'), dataIn)));
+    if (!aula || !aula.exercicios.length) {
+      c.append(el('div', { class: 'vazio' }, aula ? 'Esta aula ainda não tem exercícios. Cadastre na aba Aulas.' : 'Escolha a aula.'));
+    } else {
+      const jaTem = Object.keys(escolhas).length;
+      if (jaTem) c.append(el('div', { class: 'mut', style: 'margin-top:8px' }, 'Já existe registro deste dia: ao salvar, ele é atualizado.'));
+      aula.exercicios.forEach(x => {
+        const chips = el('div', { class: 'reacoes' });
+        const pintar = () => chips.querySelectorAll('button').forEach(b => {
+          const on = escolhas[x.id] === b.getAttribute('data-v');
+          b.className = 'bt peq' + (on ? ' escuro' : '');
+          b.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+        REACOES.forEach(([nome]) => chips.append(el('button', { type: 'button', 'data-v': nome, class: 'bt peq', onclick: () => {
+          escolhas[x.id] = escolhas[x.id] === nome ? '' : nome; pintar();
+        } }, nome)));
+        const obs = el('input', { type: 'text', maxlength: 300, placeholder: 'Observação (opcional): o que ficou difícil, o que melhorou…', value: notas[x.id] || '' });
+        obs.addEventListener('input', () => { notas[x.id] = obs.value; });
+        c.append(el('div', { style: 'background:var(--papel);border-radius:10px;padding:10px;margin-top:10px' },
+          el('div', { class: 'linha entre' }, el('b', {}, '♪ ' + x.titulo), x.tempo ? el('span', { class: 'mut' }, x.tempo + ' min') : null),
+          chips, obs));
+        pintar();
+      });
+      c.append(el('button', { class: 'bt pri', style: 'margin-top:14px', onclick: e => acao(e.currentTarget, async () => {
+        const itens = aula.exercicios.map(x => ({ id: x.id, reacao: escolhas[x.id] || '', obs: notas[x.id] || '' }));
+        if (!itens.some(i => i.reacao) && !jaTem) throw new Error('Marque como o aluno foi em pelo menos um exercício.');
+        const r = await chamar('painelSalvarAvaliacao', evoAluno, evoAula, evoData, itens);
+        toast('Registro salvo (' + r.salvos + ' exercício' + (r.salvos === 1 ? '' : 's') + ').');
+        await carregar(true);
+      }) }, 'Salvar registro da aula'));
+    }
+    app.append(c);
+
+    // --- evolução por exercício ---
+    app.append(el('h3', { style: 'margin:6px 0 8px' }, 'Evolução por exercício'));
+    if (!aval.length) { app.append(el('div', { class: 'vazio' }, 'Nenhum registro ainda para ' + primeiro(nomeDe(evoAluno)) + '.')); return; }
+    const porEx = {};
+    aval.slice().sort((x, y) => (x.data < y.data ? -1 : x.data > y.data ? 1 : 0)).forEach(a => { (porEx[a.ex] = porEx[a.ex] || []).push(a); });
+    const g = el('div', { class: 'grade' });
+    Object.keys(porEx).forEach(id => {
+      const seq = porEx[id];
+      const nota = a => (reacaoInfo(a.reacao) || [0, 0, 0])[2];
+      let tendencia = null;
+      if (seq.length >= 2) {
+        const dif = nota(seq[seq.length - 1]) - nota(seq[0]);
+        tendencia = dif > 0 ? ['↑ Melhorando', 's-ok'] : dif < 0 ? ['↓ Piorou', 's-alerta'] : ['→ Estável', 's-neutro'];
+      }
+      const linha = el('div', { class: 'linha', style: 'margin-top:8px' });
+      seq.slice(-6).forEach((a, i) => {
+        if (i) linha.append(el('span', { class: 'mut' }, '›'));
+        linha.append(el('span', { class: 'selo ' + ((reacaoInfo(a.reacao) || [])[1] || 's-neutro'), title: br(a.data) }, br(a.data).slice(0, 5) + ' ' + a.reacao));
+      });
+      g.append(el('div', { class: 'cartao' },
+        el('div', { class: 'linha entre' }, el('b', {}, exTitulo(id)), tendencia ? el('span', { class: 'selo ' + tendencia[1] }, tendencia[0]) : null),
+        el('div', { class: 'mut' }, seq.length + (seq.length === 1 ? ' registro' : ' registros')), linha));
+    });
+    app.append(g);
+
+    // --- histórico por aula ---
+    app.append(el('h3', { style: 'margin:18px 0 8px' }, 'Aulas registradas'));
+    const dias = {};
+    aval.forEach(a => { const k = a.data + '|' + a.aula; (dias[k] = dias[k] || []).push(a); });
+    const hist = el('div', { class: 'cartao feed' });
+    Object.keys(dias).sort().reverse().forEach(k => {
+      const [data, idAula] = k.split('|');
+      const itens = el('div', {});
+      dias[k].forEach(a => itens.append(el('div', { style: 'margin-top:6px' },
+        el('div', { class: 'linha' }, el('span', {}, '♪ ' + exTitulo(a.ex)), el('span', { class: 'selo ' + ((reacaoInfo(a.reacao) || [])[1] || 's-neutro') }, a.reacao)),
+        a.obs ? el('div', { class: 'coment' }, a.obs) : null)));
+      hist.append(el('div', { class: 'item' },
+        el('div', { class: 'linha entre' }, el('b', {}, br(data)), el('span', { class: 'mut' }, aulaTitulo(idAula))), itens));
+    });
+    app.append(hist);
+  }
+
+  /* ---------- Relatório ---------- */
+  function mesIso(offset) {
+    const [y, m] = D.hoje.split('-').map(Number);
+    const ini = new Date(y, m - 1 + offset, 1), fim = new Date(y, m + offset, 0);
+    const f = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    return [f(ini), f(fim)];
+  }
+  function telaRelatorio() {
+    app.append(el('h2', {}, 'Relatório de frequência'));
+    app.append(el('p', { class: 'sub' }, 'Aulas, presenças, faltas e prática de cada aluno no período escolhido.'));
+    if (!periodo) periodo = mesIso(0);
+    const de = el('input', { type: 'date', value: periodo[0] });
+    const ate = el('input', { type: 'date', value: periodo[1] });
+    const res = el('div', { style: 'margin-top:14px' });
+    const atalho = (rot, fn) => el('button', { class: 'bt peq', type: 'button', onclick: () => { periodo = fn(); render(); } }, rot);
+    app.append(el('div', { class: 'cartao' },
+      el('div', { class: 'linha' }, atalho('Este mês', () => mesIso(0)), atalho('Mês passado', () => mesIso(-1)),
+        atalho('Últimos 30 dias', () => [somaDias(D.hoje, -29), D.hoje])),
+      el('div', { class: 'form', style: 'margin-top:4px' },
+        el('div', {}, el('label', { class: 'campo' }, 'De'), de), el('div', {}, el('label', { class: 'campo' }, 'Até'), ate)),
+      el('button', { class: 'bt pri', style: 'margin-top:12px', onclick: e => acao(e.currentTarget, async () => {
+        periodo = [de.value, ate.value]; await gerarRelatorio(res);
+      }) }, 'Gerar relatório')), res);
+    gerarRelatorio(res);
+  }
+  async function gerarRelatorio(res) {
+    res.innerHTML = '<div class="carregando">♪ Calculando…</div>';
+    let r;
+    try { r = await chamar('painelRelatorio', periodo[0], periodo[1]); }
+    catch (e) { if (e.sessao) return; res.innerHTML = ''; res.append(el('div', { class: 'vazio' }, e.message)); return; }
+    res.innerHTML = '';
+    if (!r.linhas.length) { res.append(el('div', { class: 'vazio' }, 'Nenhum aluno no período.')); return; }
+    const pct = v => v == null ? '–' : Math.round(v * 100) + '%';
+    const cols = ['Aluno', 'Aulas', 'Presente', 'Faltas', 'Justif.', 'Reposição', 'Frequência', 'Dias praticou', 'Minutos'];
+    const linhas = r.linhas.map(l => [l.nome, l.realizadas, l.presentes, l.faltas, l.justificadas, l.reposicoes, pct(l.frequencia), l.diasPraticou, l.minutos]);
+    const t = el('table', { class: 'tabela' }, el('thead', {}, el('tr', {}, cols.map(h => el('th', {}, h)))));
+    const tb = el('tbody');
+    linhas.forEach(l => tb.append(el('tr', {}, l.map((v, i) => el('td', { style: i ? 'text-align:center' : 'font-weight:700' }, String(v))))));
+    t.append(tb);
+    t.className = 'tabela tabela-rel';
+    const cartoes = el('div', { class: 'cartoes-rel' });
+    r.linhas.forEach(l => cartoes.append(el('div', { class: 'cartao', style: 'background:var(--papel)' },
+      el('div', { class: 'linha entre' }, el('b', {}, l.nome), el('span', { class: 'selo ' + (l.frequencia == null ? 's-neutro' : l.frequencia >= 0.75 ? 's-ok' : 's-alerta') }, 'Frequência ' + pct(l.frequencia))),
+      el('div', { class: 'numeros' },
+        el('div', {}, el('div', { class: 'num' }, String(l.realizadas)), el('span', {}, 'aulas')),
+        el('div', {}, el('div', { class: 'num' }, String(l.presentes)), el('span', {}, 'presente')),
+        el('div', {}, el('div', { class: 'num' }, String(l.faltas)), el('span', {}, 'faltas')),
+        el('div', {}, el('div', { class: 'num' }, String(l.justificadas)), el('span', {}, 'justif.')),
+        el('div', {}, el('div', { class: 'num' }, String(l.reposicoes)), el('span', {}, 'reposição')),
+        el('div', {}, el('div', { class: 'num' }, String(l.diasPraticou)), el('span', {}, 'dias praticou'))),
+      el('div', { class: 'mut' }, l.minutos + ' min de prática no período'))));
+    const tsv = [cols.join('\t')].concat(linhas.map(l => l.join('\t'))).join('\n');
+    res.append(el('div', { class: 'cartao' },
+      el('div', { class: 'linha entre' }, el('b', {}, br(r.de) + ' a ' + br(r.ate)),
+        el('button', { class: 'bt peq', onclick: ev => {
+          const b = ev.currentTarget;
+          const ok = () => { b.textContent = 'Copiado!'; setTimeout(() => { b.textContent = 'Copiar para planilha'; }, 2000); };
+          if (navigator.clipboard) navigator.clipboard.writeText(tsv).then(ok, () => prompt('Copie o relatório:', tsv));
+          else prompt('Copie o relatório:', tsv);
+        } }, 'Copiar para planilha')),
+      el('div', { class: 'rolagem', style: 'margin-top:8px' }, t), cartoes,
+      el('div', { class: 'mut', style: 'margin-top:8px' }, '"Aulas" conta só as regulares já marcadas; a frequência soma Presente e Reposição.')));
+  }
+
+  /* ---------- Aulas ---------- */
+  function telaAulas() {
+    app.append(el('div', { class: 'linha entre' }, el('h2', {}, 'Aulas do programa'),
+      el('button', { class: 'bt escuro', onclick: e => acao(e.currentTarget, async () => {
+        const r = await chamar('painelNovaAula'); aulaAberta = r.id; toast('Aula ' + r.numero + ' criada. Edite o conteúdo e os exercícios.'); await carregar(true);
+      }) }, '+ Nova aula')));
+    app.append(el('p', { class: 'sub' }, 'É isto que o aluno vê no link de cada aula. Toque numa aula para ver ou editar.'));
+    D.aulas.forEach(a => {
+      const aberta = aulaAberta === a.id;
+      const c = el('div', { class: 'cartao', style: 'margin-bottom:10px' + (aberta ? ';border-color:var(--ambar)' : '') });
+      const cab = el('button', { type: 'button', class: 'linha entre', 'aria-expanded': aberta ? 'true' : 'false',
+        style: 'width:100%;border:0;background:none;padding:0;cursor:pointer;text-align:left',
+        onclick: () => { aulaAberta = aberta ? '' : a.id; render(); } },
+        el('div', { style: 'min-width:0' }, el('div', { class: 'mut' }, 'Aula ' + a.numero), el('h3', {}, a.titulo)),
+        el('div', { class: 'linha' }, el('span', { class: 'selo s-neutro' }, a.exercicios.length + (a.exercicios.length === 1 ? ' exercício' : ' exercícios')),
+          a.apostila ? el('span', { class: 'selo s-ok' }, 'Apostila') : null, el('span', { class: 'mut' }, aberta ? '▲' : '▼')));
+      c.append(cab);
+      if (!aberta) {
+        if (a.tarefa) c.append(el('div', { class: 'mut', style: 'margin-top:6px' }, 'Tarefa: ' + a.tarefa));
+      } else c.append(editorAula(a));
+      app.append(c);
+    });
+  }
+  function editorAula(a) {
+    const box = el('div', { style: 'margin-top:10px' });
+    const titulo = el('input', { type: 'text', value: a.titulo, maxlength: 80 });
+    const conteudo = el('textarea', { rows: 3, maxlength: 500 }); conteudo.value = a.conteudo;
+    const tarefa = el('textarea', { rows: 2, maxlength: 300 }); tarefa.value = a.tarefa;
+    const apostila = el('input', { type: 'text', value: a.apostila, placeholder: 'https://… (Google Docs, PDF no Drive…)' });
+    const exs = a.exercicios.map(x => Object.assign({}, x));
+    const lista = el('div');
+    function desenhar() {
+      lista.innerHTML = '';
+      exs.forEach((x, i) => {
+        const t = el('input', { type: 'text', value: x.titulo, maxlength: 80, placeholder: 'Nome do exercício' }); t.oninput = () => { x.titulo = t.value; };
+        const d = el('textarea', { rows: 2, maxlength: 400, placeholder: 'Como fazer' }); d.value = x.descricao; d.oninput = () => { x.descricao = d.value; };
+        const m = el('input', { type: 'number', min: 0, max: 120, value: x.tempo, style: 'width:90px' }); m.oninput = () => { x.tempo = m.value; };
+        lista.append(el('div', { style: 'background:var(--papel);border-radius:10px;padding:10px;margin-bottom:8px' },
+          el('div', { class: 'linha entre' }, el('b', {}, '♪ Exercício ' + (i + 1)),
+            el('div', { class: 'linha' },
+              i > 0 ? el('button', { class: 'bt peq', type: 'button', 'aria-label': 'Subir', onclick: () => { exs.splice(i - 1, 0, exs.splice(i, 1)[0]); desenhar(); } }, '↑') : null,
+              i < exs.length - 1 ? el('button', { class: 'bt peq', type: 'button', 'aria-label': 'Descer', onclick: () => { exs.splice(i + 1, 0, exs.splice(i, 1)[0]); desenhar(); } }, '↓') : null,
+              el('button', { class: 'bt peq', type: 'button', onclick: () => { exs.splice(i, 1); desenhar(); } }, 'Remover'))),
+          el('label', { class: 'campo' }, 'Nome'), t, el('label', { class: 'campo' }, 'Descrição'), d,
+          el('label', { class: 'campo' }, 'Tempo (min)'), m));
+      });
+    }
+    desenhar();
+    box.append(el('label', { class: 'campo' }, 'Título'), titulo,
+      el('label', { class: 'campo' }, 'Conteúdo da aula (o que você ensina)'), conteudo,
+      el('label', { class: 'campo' }, 'Tarefa da semana (aparece para o aluno)'), tarefa,
+      el('label', { class: 'campo' }, 'Link da apostila (opcional)'), apostila,
+      el('div', { class: 'mut', style: 'margin-top:4px' }, 'Use um link que o aluno consiga abrir, como um Google Docs ou PDF compartilhado com "qualquer pessoa com o link".'),
+      el('h3', { style: 'margin:16px 0 8px' }, 'Exercícios'), lista,
+      el('button', { class: 'bt peq', type: 'button', onclick: () => { exs.push({ id: '', titulo: '', descricao: '', tempo: 5 }); desenhar(); } }, '+ Adicionar exercício'),
+      el('div', { class: 'linha', style: 'margin-top:14px' },
+        el('button', { class: 'bt pri', type: 'button', onclick: e => acao(e.currentTarget, async () => {
+          await chamar('painelSalvarAula', { id: a.id, titulo: titulo.value, conteudo: conteudo.value, tarefa: tarefa.value, apostila: apostila.value }, exs);
+          toast('Aula ' + a.numero + ' salva. Os alunos já veem a versão nova.'); await carregar(true);
+        }) }, 'Salvar aula'),
+        a.apostila ? el('a', { class: 'bt', href: a.apostila, target: '_blank', rel: 'noopener' }, 'Abrir apostila') : null));
+    return box;
+  }
+
+  // início: dentro da planilha já entra; no app/web usa a sessão salva ou pede a senha
+  if (MODO === 'web' && !CHAVE) {
+    const salva = ler('violao_sessao');
+    if (/^[a-f0-9]{40,64}$/.test(salva)) { CHAVE = salva; carregar(); } else telaLogin();
+  } else carregar();
+</script>
+</body>
+</html>

@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html>
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Nunito:wght@400;600;800&display=swap">
+<style>
+  /* Braço de violão no topo (jacarandá + cordas), folha de partitura embaixo */
+  :root {
+    --madeira:#2b1a12; --madeira2:#3a2418; --corda:#d9c7a3; --traste:#b9b4a8; --marcador:#efe6d2;
+    --papel:#fbf7ef; --pauta:#e7dccb; --tinta:#2a1d15; --suave:#7d6a5a;
+    --ambar:#c8741f; --ambar-escuro:#9a5212; --ok:#3d7a4f;
+    --titulo:'DM Serif Display', Georgia, serif; --texto:'Nunito', -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--papel); color:var(--tinta); font:16px/1.5 var(--texto); }
+
+  /* ---------- Cabeçalho: braço do violão ---------- */
+  .braco { background:linear-gradient(180deg,var(--madeira2),var(--madeira)); color:var(--marcador); padding:22px 16px 30px; position:relative; overflow:hidden; }
+  .braco-inner { max-width:528px; margin:0 auto; position:relative; z-index:1; }
+  .cordas { position:absolute; inset:0; z-index:0; opacity:.6; }
+  .cordas svg { width:100%; height:100%; display:block; }
+  .cordas line.c { stroke:var(--corda); }
+  .cordas line.t { stroke:var(--traste); stroke-width:2; opacity:.35; }
+  .cordas.vibra line.c { animation:vibra .35s ease-out; }
+  @keyframes vibra { 0%{transform:translateY(0)} 25%{transform:translateY(1.5px)} 50%{transform:translateY(-1.5px)} 75%{transform:translateY(.8px)} 100%{transform:translateY(0)} }
+  .ola { font-family:var(--titulo); font-weight:400; font-size:30px; line-height:1.1; margin:0; text-shadow:0 2px 6px rgba(0,0,0,.5); }
+  .aula-tag { display:inline-flex; align-items:center; gap:8px; margin-top:10px; background:rgba(0,0,0,.45); border:1px solid rgba(239,230,210,.25); border-radius:999px; padding:5px 12px; font-size:14px; }
+  .validade { display:block; margin-top:8px; font-size:13px; color:#d8c9ad; text-shadow:0 1px 3px rgba(0,0,0,.6); }
+
+  main { max-width:560px; margin:0 auto; padding:0 16px 48px; }
+  .lado, .corpo { min-width:0; }
+
+  /* ---------- Números da semana ---------- */
+  .placar { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:-16px 0 18px; position:relative; z-index:2; }
+  .num { background:#fff; border:1px solid var(--pauta); border-radius:14px; padding:12px; text-align:center; box-shadow:0 6px 16px rgba(43,26,18,.08); }
+  .num b { display:block; font-family:var(--titulo); font-weight:400; font-size:30px; color:var(--ambar-escuro); line-height:1.1; }
+  .num span { display:block; line-height:1.3; font-size:12px; color:var(--suave); text-transform:uppercase; letter-spacing:.06em; font-weight:700; }
+
+  /* ---------- Progresso como casas do braço ---------- */
+  .trilha-tit { font-size:12px; color:var(--suave); text-transform:uppercase; letter-spacing:.08em; font-weight:800; margin:0 0 6px; }
+  .trilha { display:flex; background:var(--madeira); border-radius:6px; padding:0 0 0 8px; height:34px; margin-bottom:6px; border-left:6px solid var(--marcador); }
+  .casa { flex:1; border-right:3px solid var(--traste); display:flex; align-items:center; justify-content:center; }
+  .casa i { width:14px; height:14px; border-radius:50%; background:transparent; border:2px solid rgba(239,230,210,.25); transition:.3s; }
+  .casa.feita i { background:var(--ambar); border-color:var(--ambar); box-shadow:0 0 10px rgba(200,116,31,.8); }
+  .trilha-leg { font-size:13px; color:var(--suave); margin:0 0 20px; }
+
+  /* ---------- Evolução (reação do professor a cada exercício) ---------- */
+  .evo { background:#fff; border:1px solid var(--pauta); border-radius:14px; padding:12px 14px; margin-bottom:10px; }
+  .evo h3 { margin:0; font-size:16px; font-weight:800; }
+  .evo .linha-evo { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-top:8px; }
+  .reacao { display:inline-block; font-size:12px; font-weight:800; border-radius:999px; padding:3px 10px; background:var(--papel); color:var(--suave); border:1px solid var(--pauta); }
+  .reacao.r-dominou { background:#e8f2ea; color:var(--ok); border-color:#e8f2ea; }
+  .reacao.r-bem { background:#e6eff7; color:#2f5f8a; border-color:#e6eff7; }
+  .reacao.r-dificuldade { background:#fdf3d8; color:#8a6510; border-color:#fdf3d8; }
+  .reacao.r-nao { background:#fbe9e6; color:#a13a26; border-color:#fbe9e6; }
+  .tend { font-size:13px; font-weight:800; margin-top:6px; }
+  .tend.sobe { color:var(--ok); } .tend.desce { color:#a13a26; } .tend.igual { color:var(--suave); }
+
+  /* ---------- Tarefa ---------- */
+  .tarefa { background:#fff; border:1px solid var(--pauta); border-radius:14px; padding:14px 50px 14px 16px; margin-bottom:8px; position:relative; }
+  .tarefa::before { content:'♪'; position:absolute; right:14px; top:6px; font-size:34px; color:var(--pauta); }
+  .tarefa b { display:block; font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--ambar-escuro); }
+  .tarefa a { display:inline-block; margin-top:8px; color:var(--ambar-escuro); font-weight:700; }
+
+  /* ---------- Títulos com pauta ---------- */
+  .secao { font-family:var(--titulo); font-weight:400; font-size:22px; margin:26px 0 12px; }
+  .secao::after { content:''; display:block; height:21px; margin-top:6px;
+           background:repeating-linear-gradient(180deg,var(--pauta) 0 1px,transparent 1px 5px); }
+  .secao small { display:block; font-family:var(--texto); font-size:13px; color:var(--suave); }
+
+  /* ---------- Exercícios com palheta ---------- */
+  .ex { display:flex; gap:14px; align-items:flex-start; background:#fff; border:1px solid var(--pauta); border-radius:14px; padding:14px; margin-bottom:10px; cursor:pointer; position:relative; transition:border-color .2s, transform .1s; }
+  .ex:active { transform:scale(.99); }
+  .ex input { position:absolute; opacity:0; pointer-events:none; }
+  .palheta { flex:none; width:30px; height:34px; margin-top:2px; }
+  .palheta path { fill:#fff; stroke:var(--traste); stroke-width:2; transition:.2s; }
+  .palheta text { fill:transparent; font:800 15px var(--texto); transition:.2s; }
+  .ex.marcado { border-color:var(--ambar); box-shadow:0 0 0 3px rgba(200,116,31,.15); }
+  .ex.marcado .palheta path { fill:var(--ambar); stroke:var(--ambar-escuro); }
+  .ex.marcado .palheta text { fill:#fff; }
+  .ex input:focus-visible + .palheta path { stroke:var(--tinta); stroke-width:3; }
+  .ex h3 { margin:0; font-size:16px; font-weight:800; }
+  .ex .tempo { font-weight:600; color:var(--suave); font-size:13px; white-space:nowrap; }
+  .ex p { margin:4px 0 0; font-size:14px; color:var(--suave); }
+  .vezes { display:inline-block; margin-top:6px; font-size:12px; font-weight:700; color:var(--ok); background:#e8f2ea; border-radius:999px; padding:2px 9px; }
+
+  /* ---------- Campos ---------- */
+  .campo { display:block; font-weight:800; margin:18px 0 6px; }
+  .minutos { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+  .chip { border:1px solid var(--pauta); background:#fff; color:var(--tinta); border-radius:10px; padding:10px 6px; font:600 15px var(--texto); cursor:pointer; }
+  .chip.on { background:var(--madeira); border-color:var(--madeira); color:var(--marcador); }
+  input[type=number], textarea { width:100%; padding:11px 12px; border:1px solid var(--pauta); border-radius:10px; font:inherit; background:#fff; color:var(--tinta); }
+  input[type=number] { margin-top:8px; }
+  .difs { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+  .difs .chip { display:flex; flex-direction:column; align-items:center; gap:2px; }
+  .difs .chip span { font-size:22px; line-height:1; }
+  .chip:focus-visible, .tocar:focus-visible, textarea:focus-visible, input:focus-visible { outline:3px solid var(--ambar); outline-offset:2px; }
+
+  .tocar { width:100%; margin-top:24px; padding:16px; border:0; border-radius:14px; background:linear-gradient(180deg,var(--ambar),var(--ambar-escuro)); color:#fff; font:800 18px var(--texto); cursor:pointer; box-shadow:0 8px 18px rgba(154,82,18,.35); display:flex; align-items:center; justify-content:center; gap:10px; }
+  .tocar:disabled { opacity:.6; }
+  .msg { margin-top:12px; padding:12px 14px; border-radius:12px; display:none; font-weight:600; }
+  .msg.ok { display:block; background:#e8f2ea; color:var(--ok); }
+  .msg.erro { display:block; background:#fbe9e6; color:#a13a26; }
+
+  .notas { position:fixed; inset:0; pointer-events:none; overflow:hidden; z-index:9; }
+  .notas span { position:absolute; bottom:-30px; font-size:26px; color:var(--ambar); animation:sobe 1.8s ease-out forwards; }
+  @keyframes sobe { to { transform:translateY(-75vh) rotate(25deg); opacity:0; } }
+
+  .aviso { text-align:center; padding:40px 8px; }
+  .aviso .icone { font-size:54px; color:var(--ambar); }
+  .aviso h1 { font-family:var(--titulo); font-weight:400; margin:6px 0; }
+
+  /* ---------- Celular pequeno ---------- */
+  @media (max-width:360px) {
+    .ola { font-size:26px; }
+    .minutos { grid-template-columns:repeat(2,1fr); }
+    .num b { font-size:26px; }
+  }
+
+  /* ---------- Computador e tablet deitado: duas colunas ---------- */
+  @media (hover:hover) {
+    .ex:hover { border-color:var(--ambar); }
+    .chip:hover { border-color:var(--madeira); }
+    .tocar:hover { filter:brightness(1.07); }
+  }
+  @media (min-width:900px) {
+    .braco { padding:34px 32px 44px; }
+    .braco-inner { max-width:1016px; }
+    .ola { font-size:44px; }
+    .aula-tag { font-size:15px; }
+    main { max-width:1080px; padding:0 32px 64px; display:grid; grid-template-columns:340px minmax(0,1fr); gap:32px; align-items:start; }
+    .lado { position:sticky; top:16px; }
+    .placar { margin-top:-24px; }
+    .corpo { padding-top:4px; }
+    .corpo > .secao:first-child { margin-top:12px; }
+    .lista-ex { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .lista-ex .ex { margin-bottom:0; }
+    .tocar { max-width:420px; margin-left:auto; }
+    .aviso { grid-column:1 / -1; max-width:520px; margin:0 auto; }
+  }
+
+  /* ---------- Cadastro e entrada ---------- */
+  .porta { max-width:520px; margin:-16px auto 0; position:relative; z-index:2; background:#fff; border:1px solid var(--pauta); border-radius:16px; padding:20px 18px 22px; box-shadow:0 6px 16px rgba(43,26,18,.08); grid-column:1 / -1; width:100%; }
+  .porta h2 { font-family:var(--titulo); font-weight:400; font-size:24px; margin:0 0 4px; }
+  .porta .intro { color:var(--suave); margin:0 0 6px; font-size:15px; }
+  .porta input[type=text], .porta input[type=tel], .porta input[type=email] { width:100%; padding:11px 12px; border:1px solid var(--pauta); border-radius:10px; font:inherit; background:#fff; color:var(--tinta); }
+  .porta .opcoes { display:flex; flex-wrap:wrap; gap:8px; }
+  .porta .opcoes .chip { flex:1 1 auto; }
+  .obrig { color:var(--ambar-escuro); }
+  .dica { font-size:13px; color:var(--suave); margin-top:4px; }
+  .porta .tocar { max-width:none; margin-left:0; }
+
+  @media (prefers-reduced-motion: reduce) { .cordas.vibra line.c, .notas span { animation:none; } }
+</style>
+</head>
+<body>
+<header class="braco">
+  <div class="cordas" id="cordas" aria-hidden="true">
+    <svg viewBox="0 0 400 140" preserveAspectRatio="none">
+      <line class="t" x1="60" y1="0" x2="60" y2="140"/><line class="t" x1="160" y1="0" x2="160" y2="140"/>
+      <line class="t" x1="250" y1="0" x2="250" y2="140"/><line class="t" x1="330" y1="0" x2="330" y2="140"/>
+      <line class="c" x1="0" y1="20"  x2="400" y2="20"  stroke-width="0.8"/>
+      <line class="c" x1="0" y1="40"  x2="400" y2="40"  stroke-width="1.1"/>
+      <line class="c" x1="0" y1="60"  x2="400" y2="60"  stroke-width="1.4"/>
+      <line class="c" x1="0" y1="80"  x2="400" y2="80"  stroke-width="1.8"/>
+      <line class="c" x1="0" y1="100" x2="400" y2="100" stroke-width="2.2"/>
+      <line class="c" x1="0" y1="120" x2="400" y2="120" stroke-width="2.7"/>
+    </svg>
+  </div>
+  <div class="braco-inner" id="topo"></div>
+</header>
+<main id="app"></main>
+<div class="notas" id="notas" aria-hidden="true"></div>
+
+<script>
+  let ctx = <?!= dados ?>;
+  const app = document.getElementById('app');
+  const topo = document.getElementById('topo');
+  let minutosEscolhidos = '';
+
+  function el(tag, attrs, texto) {
+    const e = document.createElement(tag);
+    Object.entries(attrs || {}).forEach(([k, v]) => e.setAttribute(k, v));
+    if (texto !== undefined) e.textContent = texto;
+    return e;
+  }
+
+  function dedilhar() {
+    const c = document.getElementById('cordas');
+    c.classList.remove('vibra'); void c.offsetWidth; c.classList.add('vibra');
+  }
+
+  function chuvaDeNotas() {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const box = document.getElementById('notas');
+    const simbolos = ['♪', '♫', '♩', '♬'];
+    for (let i = 0; i < 14; i++) {
+      const s = el('span', {}, simbolos[i % 4]);
+      s.style.left = (5 + Math.random() * 90) + '%';
+      s.style.animationDelay = (Math.random() * 0.5) + 's';
+      box.append(s);
+      setTimeout(() => s.remove(), 2600);
+    }
+  }
+
+  function palhetaSvg() {
+    const ns = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('viewBox', '0 0 30 34'); svg.setAttribute('class', 'palheta');
+    const p = document.createElementNS(ns, 'path');
+    p.setAttribute('d', 'M15 32 C9 25 2 16 2 9 C2 4 8 2 15 2 C22 2 28 4 28 9 C28 16 21 25 15 32 Z');
+    const t = document.createElementNS(ns, 'text');
+    t.setAttribute('x', '15'); t.setAttribute('y', '17'); t.setAttribute('text-anchor', 'middle');
+    t.textContent = '✓';
+    svg.append(p, t);
+    return svg;
+  }
+
+  /* ---------- Identificação ---------- */
+  function aparelhoId() {
+    try {
+      let id = localStorage.getItem('violao_aparelho');
+      if (!id) {
+        id = (window.crypto && crypto.randomUUID ? crypto.randomUUID() : (Date.now().toString(36) + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2)));
+        id = id.replace(/[^a-z0-9]/gi, '');
+        localStorage.setItem('violao_aparelho', id);
+      }
+      return id;
+    } catch (e) { return ''; }
+  }
+  function lembrar(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  function lido(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }
+  let nomeOk = '';
+
+  function escolha(opcoes, multipla) {
+    const box = el('div', { class: 'opcoes' });
+    opcoes.forEach(o => {
+      const b = el('button', { type: 'button', class: 'chip', 'data-v': o }, o);
+      b.addEventListener('click', () => {
+        if (!multipla) box.querySelectorAll('.chip').forEach(c => c.classList.remove('on'));
+        b.classList.toggle('on', multipla ? !b.classList.contains('on') : true);
+      });
+      box.append(b);
+    });
+    box.valor = () => [...box.querySelectorAll('.chip.on')].map(c => c.getAttribute('data-v')).join(', ');
+    return box;
+  }
+
+  function campo(rotulo, input, obrig, dica) {
+    const l = el('label', { class: 'campo', for: input.id || '' }, rotulo);
+    if (obrig) l.append(el('span', { class: 'obrig' }, ' *'));
+    const frag = document.createDocumentFragment();
+    frag.append(l, input);
+    if (dica) frag.append(el('div', { class: 'dica' }, dica));
+    return frag;
+  }
+
+  function cabecalhoPorta(titulo) {
+    topo.append(el('h1', { class: 'ola' }, titulo));
+    topo.append(el('span', { class: 'aula-tag' }, '♪ Aula ' + ctx.aula.numero + ' · ' + ctx.aula.titulo));
+    topo.append(el('span', { class: 'validade' }, 'Link válido até ' + ctx.validade));
+  }
+
+  function botaoAcao(texto, acao) {
+    const btn = el('button', { type: 'button', class: 'tocar' });
+    btn.append(el('span', {}, '♫'), document.createTextNode(texto));
+    btn.addEventListener('click', () => acao(btn));
+    return btn;
+  }
+
+  function chamar(btn, textoOriginal, fn, args, aoSucesso) {
+    const msg = document.getElementById('msg');
+    btn.disabled = true; btn.lastChild.textContent = 'Enviando...';
+    google.script.run
+      .withSuccessHandler(aoSucesso)
+      .withFailureHandler(err => {
+        btn.disabled = false; btn.lastChild.textContent = textoOriginal;
+        msg.className = 'msg erro'; msg.textContent = String(err.message || err).replace(/^Error:\s*/, '');
+      })[fn].apply(null, args);
+  }
+
+  function renderCadastro() {
+    cabecalhoPorta('Bem-vinda ao violão!');
+    const box = el('section', { class: 'porta' });
+    box.append(el('h2', {}, 'Seu cadastro'));
+    box.append(el('p', { class: 'intro' }, 'Antes do primeiro exercício, conte um pouco sobre você. É rapidinho e só acontece uma vez.'));
+    const nome = el('input', { type: 'text', id: 'cad-nome', autocomplete: 'name', maxlength: '80' });
+    const fone = el('input', { type: 'tel', id: 'cad-fone', autocomplete: 'tel', inputmode: 'tel', placeholder: '(94) 99123-4567' });
+    const email = el('input', { type: 'email', id: 'cad-email', autocomplete: 'email', placeholder: 'opcional' });
+    const temViolao = escolha(['Sim', 'Ainda não']);
+    const tipo = escolha(['Nylon', 'Aço', 'Não sei']);
+    const exp = el('textarea', { id: 'cad-exp', rows: '2', maxlength: '300', placeholder: 'Ex.: nunca toquei / já aprendi alguns acordes' });
+    const estilos = el('textarea', { id: 'cad-estilos', rows: '2', maxlength: '300', placeholder: 'Ex.: gospel, sertanejo, MPB…' });
+    const objetivo = escolha(['Tocar na igreja', 'Com amigos e família', 'Para mim mesma', 'Outro'], true);
+    box.append(
+      campo('Nome completo', nome, true, 'Nos próximos links você entra só digitando esse nome.'),
+      campo('WhatsApp com DDD', fone, true),
+      campo('E-mail', email),
+      campo('Você tem violão em casa?', temViolao),
+      campo('Qual o tipo de corda?', tipo),
+      campo('Já tocou algum instrumento?', exp),
+      campo('Que estilos ou músicas você quer tocar?', estilos),
+      campo('Para que você quer aprender?', objetivo)
+    );
+    box.append(botaoAcao('Fazer cadastro e ver meus exercícios', btn => {
+      chamar(btn, 'Fazer cadastro e ver meus exercícios', 'cadastrar', [{
+        token: ctx.token, aparelho: aparelhoId(), nome: nome.value, telefone: fone.value, email: email.value,
+        temViolao: temViolao.valor(), tipoViolao: tipo.valor(), experiencia: exp.value, estilos: estilos.value, objetivo: objetivo.valor()
+      }], novo => {
+        nomeOk = novo.nomeDigitado; lembrar('violao_nome', nomeOk); ctx = novo;
+        render('Cadastro feito! Agora é com você: bons estudos.', 'ok'); window.scrollTo(0, 0); dedilhar(); chuvaDeNotas();
+      });
+    }));
+    box.append(el('div', { class: 'msg', id: 'msg', role: 'status' }));
+    app.append(box);
+  }
+
+  function renderNome() {
+    cabecalhoPorta('Hora de ensaiar!');
+    const box = el('section', { class: 'porta' });
+    box.append(el('h2', {}, 'Quem está tocando?'));
+    box.append(el('p', { class: 'intro' }, 'Digite o seu nome para abrir os exercícios.'));
+    const nome = el('input', { type: 'text', id: 'entrar-nome', autocomplete: 'given-name', maxlength: '80', value: lido('violao_nome') });
+    box.append(campo('Seu nome', nome, true));
+    const ir = btn => chamar(btn, 'Entrar', 'entrar', [ctx.token, nome.value, aparelhoId()], novo => {
+      nomeOk = novo.nomeDigitado; lembrar('violao_nome', nomeOk); ctx = novo; render(); window.scrollTo(0, 0); dedilhar();
+    });
+    const btn = botaoAcao('Entrar', ir);
+    nome.addEventListener('keydown', e => { if (e.key === 'Enter') ir(btn); });
+    box.append(btn, el('div', { class: 'msg', id: 'msg', role: 'status' }));
+    app.append(box);
+  }
+
+  function render(mensagem, tipo) {
+    app.innerHTML = ''; topo.innerHTML = '';
+    minutosEscolhidos = '';
+
+    if (ctx.erro) {
+      topo.append(el('p', { class: 'ola' }, 'Pausa na música'));
+      const box = el('div', { class: 'aviso' });
+      box.append(el('div', { class: 'icone' }, '♫'), el('h1', {}, 'Link fora do ar'), el('p', {}, ctx.erro));
+      app.append(box);
+      return;
+    }
+    if (ctx.etapa === 'cadastro') { renderCadastro(); return; }
+    if (ctx.etapa === 'nome') { renderNome(); return; }
+
+    const primeiro = ctx.nome.split(' ')[0] || 'aluna';
+    topo.append(el('h1', { class: 'ola' }, 'Olá, ' + primeiro + '!'));
+    topo.append(el('span', { class: 'aula-tag' }, '♪ Aula ' + ctx.aula.numero + ' · ' + ctx.aula.titulo));
+    topo.append(el('span', { class: 'validade' }, 'Link válido até ' + ctx.validade));
+
+    const lado = el('section', { class: 'lado' });
+    const corpo = el('section', { class: 'corpo' });
+    app.append(lado, corpo);
+
+    const placar = el('div', { class: 'placar' });
+    [[ctx.dias, ctx.dias === 1 ? 'dia praticado' : 'dias praticados'], [ctx.minutos, 'minutos tocando']].forEach(([n, t]) => {
+      const s = el('div', { class: 'num' }); s.append(el('b', {}, String(n)), el('span', {}, t)); placar.append(s);
+    });
+    lado.append(placar);
+
+    const feitos = ctx.exercicios.filter(x => x.vezes > 0).length;
+    lado.append(el('p', { class: 'trilha-tit' }, 'Seu braço do violão'));
+    const trilha = el('div', { class: 'trilha', role: 'img', 'aria-label': feitos + ' de ' + ctx.exercicios.length + ' exercícios já praticados' });
+    ctx.exercicios.forEach(x => { const c = el('div', { class: 'casa' + (x.vezes > 0 ? ' feita' : '') }); c.append(el('i')); trilha.append(c); });
+    lado.append(trilha);
+    lado.append(el('p', { class: 'trilha-leg' }, feitos === ctx.exercicios.length && feitos > 0
+      ? 'Todas as casas acesas! Agora é repetir até ficar fácil.'
+      : feitos + ' de ' + ctx.exercicios.length + ' exercícios já praticados. Cada exercício acende uma casa.'));
+
+    if (ctx.aula.tarefa) {
+      const t = el('div', { class: 'tarefa' });
+      t.append(el('b', {}, 'Tarefa da semana'), document.createTextNode(ctx.aula.tarefa));
+      if (ctx.aula.apostila && /^https?:\/\//.test(ctx.aula.apostila)) {
+        t.append(document.createElement('br'), el('a', { href: ctx.aula.apostila, target: '_blank', rel: 'noopener' }, 'Abrir a apostila da aula →'));
+      }
+      lado.append(t);
+    }
+
+    const h = el('h2', { class: 'secao' }, ctx.hoje ? 'Tocou mais alguma coisa hoje?' : 'O que você tocou hoje?');
+    h.append(el('small', {}, 'Toque na palheta de cada exercício que você fez'));
+    corpo.append(h);
+
+    const lista = el('div', { class: 'lista-ex' });
+    corpo.append(lista);
+    ctx.exercicios.forEach(x => {
+      const card = el('label', { class: 'ex' });
+      const cb = el('input', { type: 'checkbox', value: x.id });
+      cb.addEventListener('change', () => { card.classList.toggle('marcado', cb.checked); if (cb.checked) dedilhar(); });
+      const txt = el('div');
+      const tit = el('h3', {}, x.titulo + ' ');
+      if (x.tempo) tit.append(el('span', { class: 'tempo' }, '· ' + x.tempo + ' min'));
+      txt.append(tit, el('p', {}, x.descricao));
+      if (x.vezes) txt.append(el('span', { class: 'vezes' }, '♪ feito ' + x.vezes + (x.vezes > 1 ? ' vezes' : ' vez')));
+      card.append(cb, palhetaSvg(), txt);
+      lista.append(card);
+    });
+
+    corpo.append(el('h2', { class: 'secao' }, 'Quanto tempo de ensaio?'));
+    const mins = el('div', { class: 'minutos' });
+    const outro = el('input', { type: 'number', id: 'min', min: '0', max: '300', inputmode: 'numeric', placeholder: 'Outro valor (minutos)' });
+    [10, 15, 20, 30].forEach(v => {
+      const b = el('button', { type: 'button', class: 'chip' }, v + ' min');
+      b.addEventListener('click', () => {
+        mins.querySelectorAll('.chip').forEach(c => c.classList.remove('on'));
+        b.classList.add('on'); minutosEscolhidos = String(v); outro.value = '';
+      });
+      mins.append(b);
+    });
+    outro.addEventListener('input', () => { mins.querySelectorAll('.chip').forEach(c => c.classList.remove('on')); minutosEscolhidos = outro.value; });
+    corpo.append(mins, outro);
+
+    corpo.append(el('h2', { class: 'secao' }, 'Como soou?'));
+    const difs = el('div', { class: 'difs', role: 'radiogroup' });
+    [['Fácil', '♩', 'Saiu fácil'], ['Médio', '♪', 'Médio'], ['Difícil', '♬', 'Difícil']].forEach(([v, s, t]) => {
+      const b = el('button', { type: 'button', class: 'chip', role: 'radio', 'aria-checked': 'false', 'data-v': v });
+      b.append(el('span', {}, s), document.createTextNode(t));
+      b.addEventListener('click', () => {
+        difs.querySelectorAll('.chip').forEach(c => { c.classList.remove('on'); c.setAttribute('aria-checked', 'false'); });
+        b.classList.add('on'); b.setAttribute('aria-checked', 'true');
+      });
+      difs.append(b);
+    });
+    corpo.append(difs);
+
+    corpo.append(el('label', { class: 'campo', for: 'com' }, 'Alguma dúvida ou dificuldade? (opcional)'));
+    corpo.append(el('textarea', { id: 'com', rows: '3', maxlength: '500', placeholder: 'Ex.: o dedo 4 ainda não alcança a casa' }));
+
+    const btn = el('button', { type: 'button', class: 'tocar' });
+    btn.append(el('span', {}, '♫'), document.createTextNode('Registrar o ensaio de hoje'));
+    btn.addEventListener('click', () => enviar(btn));
+    corpo.append(btn);
+
+    corpo.append(el('div', { class: 'msg' + (tipo ? ' ' + tipo : ''), id: 'msg', role: 'status' }, mensagem || ''));
+    renderEvolucao(corpo);
+  }
+
+  /* Reações que o professor registrou nas aulas presenciais */
+  const CLASSE_REACAO = { 'Dominou': 'r-dominou', 'Foi bem': 'r-bem', 'Com dificuldade': 'r-dificuldade', 'Não conseguiu': 'r-nao' };
+  const TENDENCIA = { sobe: ['↑ Você está evoluindo!', 'sobe'], desce: ['↓ Esse está pedindo mais treino', 'desce'], igual: ['→ Mantendo o nível', 'igual'] };
+  function renderEvolucao(corpo) {
+    const evo = ctx.evolucao || [];
+    if (!evo.length) return;
+    const h = el('h2', { class: 'secao' }, 'Sua evolução');
+    const dominados = evo.filter(x => x.ultima === 'Dominou').length;
+    h.append(el('small', {}, dominados
+      ? dominados + (dominados === 1 ? ' exercício dominado' : ' exercícios dominados') + ' até agora. Veja como o professor viu cada um:'
+      : 'Como o professor viu cada exercício nas aulas:'));
+    corpo.append(h);
+    evo.forEach(x => {
+      const c = el('div', { class: 'evo' });
+      c.append(el('h3', {}, x.titulo));
+      const linha = el('div', { class: 'linha-evo' });
+      x.historico.forEach((hst, i) => {
+        if (i) linha.append(el('span', { 'aria-hidden': 'true' }, '›'));
+        linha.append(el('span', { class: 'reacao ' + (CLASSE_REACAO[hst.reacao] || '') }, hst.data + ' · ' + hst.reacao));
+      });
+      c.append(linha);
+      const t = TENDENCIA[x.tendencia];
+      if (t) c.append(el('div', { class: 'tend ' + t[1] }, t[0]));
+      corpo.append(c);
+    });
+  }
+
+  function enviar(btn) {
+    const exercicios = [...document.querySelectorAll('.ex input:checked')].map(i => i.value);
+    const msg = document.getElementById('msg');
+    if (!exercicios.length) { msg.className = 'msg erro'; msg.textContent = 'Toque na palheta de pelo menos um exercício.'; return; }
+    const dif = document.querySelector('.difs .chip.on');
+    btn.disabled = true; btn.lastChild.textContent = 'Enviando...';
+    google.script.run
+      .withSuccessHandler(novo => {
+        ctx = novo;
+        render('Ensaio registrado! O professor já está vendo. Continue assim!', 'ok');
+        window.scrollTo(0, 0); dedilhar(); chuvaDeNotas();
+      })
+      .withFailureHandler(err => {
+        btn.disabled = false; btn.lastChild.textContent = 'Registrar o ensaio de hoje';
+        msg.className = 'msg erro'; msg.textContent = String(err.message || err).replace(/^Error:\s*/, '');
+      })
+      .registrar({
+        token: ctx.token,
+        nome: nomeOk,
+        aparelho: aparelhoId(),
+        navegador: navigator.userAgent,
+        exercicios: exercicios,
+        minutos: minutosEscolhidos,
+        dificuldade: dif ? dif.getAttribute('data-v') : '',
+        comentario: document.getElementById('com').value
+      });
+  }
+
+  render();
+</script>
+</body>
+</html>

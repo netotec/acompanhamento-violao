@@ -356,7 +356,6 @@
   function telaEnviar() {
     app.append(el('h2', {}, 'Enviar link de exercícios'));
     app.append(el('p', { class: 'sub' }, 'Depois de cada aula presencial: escolha o aluno e a aula dada. A validade já vem com a data da próxima aula.'));
-    if (!D.temUrl) app.append(el('div', { class: 'cartao', style: 'border-color:var(--alerta);margin-bottom:12px' }, 'Falta salvar a URL do web app: na planilha, use Violão > Definir URL do web app.'));
     app.append(blocoEndereco());
     const c = el('div', { class: 'cartao', style: 'max-width:640px' });
     const aviso = el('div', { class: 'mut', role: 'status', style: 'margin-top:6px' });
@@ -434,7 +433,7 @@
         el('button', { class: 'bt pri', onclick: e => acao(e.currentTarget, async () => {
           const r = await chamar('painelDefinirEndereco', campo.value);
           editandoEndereco = false;
-          toast(r ? 'Pronto: os próximos links saem em ' + r : 'Endereço removido: os links voltam a usar o endereço do Google.');
+          toast('Pronto: os próximos links saem em ' + r);
           await carregar(true);
         }) }, 'Salvar endereço'),
         definido ? el('button', { class: 'bt', onclick: () => { editandoEndereco = false; render(); } }, 'Cancelar') : null));
