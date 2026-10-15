@@ -25,6 +25,7 @@ function onOpen() {
     .addItem('Definir senha do painel', 'definirSenhaPainel')
     .addSeparator()
     .addItem('Gerar links pendentes', 'gerarLinks')
+    .addItem('Ligar apostilas (PDF) às aulas', 'ligarApostilas')
     .addSeparator()
     .addItem('Processar faltas agora', 'processarFaltas')
     .addItem('Ativar automação (AppSheet)', 'ativarAutomacao')
@@ -101,6 +102,29 @@ function tabela_(nome) {
 
 function data_(d) {
   return d ? Utilities.formatDate(new Date(d), FUSO, 'dd/MM/yyyy') : '';
+}
+
+/** Menu Violão > Ligar apostilas: preenche Link_Apostila (aba Aulas) com o PDF da aula, no endereço do app
+ *  (apostilas/aula-NN.pdf, NN = número da aula). Só preenche células vazias: links que você colocou ficam. */
+function ligarApostilas() {
+  soDono_();
+  const preenchidas = comTrava_(() => {
+    const sh = ss_().getSheetByName(ABA.aulas);
+    const v = sh.getDataRange().getValues();
+    const cab = v[0];
+    const cNum = cab.indexOf('Numero'), cLink = cab.indexOf('Link_Apostila');
+    if (cNum < 0 || cLink < 0) throw new Error('A aba Aulas precisa das colunas Numero e Link_Apostila.');
+    const base = urlPublica_() + 'apostilas/aula-';
+    let n = 0;
+    for (let i = 1; i < v.length; i++) {
+      const num = Number(v[i][cNum]);
+      if (!num || num < 1 || num > 99 || String(v[i][cLink] || '').trim()) continue;
+      sh.getRange(i + 1, cLink + 1).setValue(base + String(num).padStart(2, '0') + '.pdf');
+      n++;
+    }
+    return n;
+  });
+  SpreadsheetApp.getUi().alert(preenchidas + ' aula(s) ligada(s) à apostila em PDF. Aulas que já tinham link não foram alteradas.');
 }
 
 /** Menu Violão > Gerar links pendentes: cria token, link e mensagem de WhatsApp
